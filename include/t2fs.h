@@ -19,287 +19,287 @@ typedef unsigned int DWORD;
 #pragma pack(push, 1)
 
 /** Superbloco */
-struct t2fs_superbloco {		// Tabela 1 ñ DescriÁ„o dos campos do bloco de boot
-	char    id[4];			// ìT2FSî	IdentificaÁ„o do sistema de arquivo.
-	WORD    version;		// Vers„o atual desse sistema de arquivos Valor fixo 0x7E12 (0x7E1=2017; 2=2∫ semestre)
-	WORD	SuperBlockSize;		// Quantidade de setores lÛgicos que formam o superbloco.
-	DWORD	DiskSize;		// Tamanho total, em bytes, da partiÁ„o T2FS. Inclui o superbloco, a ·rea de FAT e os clusters de dados.
-	DWORD	NofSectors;		// Quantidade total de setores lÛgicos da partiÁ„o T2FS. Inclui o superbloco, a ·rea de FAT e os clusters de dados.
-	DWORD	SectorsPerCluster;	// N˙mero de setores lÛgicos que formam um cluster.
-	DWORD	pFATSectorStart;	// N˙mero do setor lÛgico onde a FAT inicia.
-	DWORD	RootDirCluster;		// Cluster onde inicia o arquivo correspondente ao diretÛrio raiz
-	DWORD	DataSectorStart;	// Primeiro setor lÛgico da ·rea de blocos de dados (cluster).
+struct t2fs_superbloco {		// Tabela 1 ‚Äì Descri√ß√£o dos campos do bloco de boot
+	char    id[4];			// ‚ÄúT2FS‚Äù	Identifica√ß√£o do sistema de arquivo.
+	WORD    version;		// Vers√£o atual desse sistema de arquivos Valor fixo 0x7E12 (0x7E1=2017; 2=2¬∫ semestre)
+	WORD	SuperBlockSize;		// Quantidade de setores l√≥gicos que formam o superbloco.
+	DWORD	DiskSize;		// Tamanho total, em bytes, da parti√ß√£o T2FS. Inclui o superbloco, a √°rea de FAT e os clusters de dados.
+	DWORD	NofSectors;		// Quantidade total de setores l√≥gicos da parti√ß√£o T2FS. Inclui o superbloco, a √°rea de FAT e os clusters de dados.
+	DWORD	SectorsPerCluster;	// N√∫mero de setores l√≥gicos que formam um cluster.
+	DWORD	pFATSectorStart;	// N√∫mero do setor l√≥gico onde a FAT inicia.
+	DWORD	RootDirCluster;		// Cluster onde inicia o arquivo correspondente ao diret√≥rio raiz
+	DWORD	DataSectorStart;	// Primeiro setor l√≥gico da √°rea de blocos de dados (cluster).
 };
 
 
-/** Registro de diretÛrio (entrada de diretÛrio) */
+/** Registro de diret√≥rio (entrada de diret√≥rio) */
 #define	MAX_FILE_NAME_SIZE	55
 struct t2fs_record {
-    BYTE    TypeVal;        		/* TypeVal	Tipo da entrada. Indica se o registro È v·lido e, se for, o tipo do arquivo (regular ou diretÛrio). */
-					/*	0x00, registro inv·lido (n„o associado a nenhum arquivo);
+    BYTE    TypeVal;        		/* TypeVal	Tipo da entrada. Indica se o registro √© v√°lido e, se for, o tipo do arquivo (regular ou diret√≥rio). */
+					/*	0x00, registro inv√°lido (n√£o associado a nenhum arquivo);
 						0x01, arquivo regular;
-						0x02, arquivo de diretÛrio.
-						Outros valores, registro inv·lido (n„o associado a nenhum arquivo)
+						0x02, arquivo de diret√≥rio.
+						Outros valores, registro inv√°lido (n√£o associado a nenhum arquivo)
 						*/
-    char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 atÈ 0x7A), case sensitive.             */
-    DWORD   bytesFileSize;  		/* Tamanho do arquivo. Expresso em n˙mero de bytes.          */
-    DWORD   firstCluster;		/* N˙mero do primeiro cluster de dados correspondente a essa entrada de diretÛrio */
+    char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 at√© 0x7A), case sensitive.             */
+    DWORD   bytesFileSize;  		/* Tamanho do arquivo. Expresso em n√∫mero de bytes.          */
+    DWORD   firstCluster;		/* N√∫mero do primeiro cluster de dados correspondente a essa entrada de diret√≥rio */
 };
 
 #pragma pack(pop)
 
-/** Registro com as informaÁıes da entrada de diretÛrio, lida com readdir2 */
+/** Registro com as informa√ß√µes da entrada de diret√≥rio, lida com readdir2 */
 typedef struct {
     char    name[MAX_FILE_NAME_SIZE+1]; /* Nome do arquivo cuja entrada foi lida do disco      */
-    BYTE    fileType;                   /* Tipo do arquivo: regular (0x01) ou diretÛrio (0x02) */
+    BYTE    fileType;                   /* Tipo do arquivo: regular (0x01) ou diret√≥rio (0x02) */
     DWORD   fileSize;                   /* Numero de bytes do arquivo                          */
 } DIRENT2;
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o: Usada para identificar os desenvolvedores do T2FS.
-	Essa funÁ„o copia um string de identificaÁ„o para o ponteiro indicado por "name".
-	Essa cÛpia n„o pode exceder o tamanho do buffer, informado pelo par‚metro "size".
-	O string deve ser formado apenas por caracteres ASCII (Valores entre 0x20 e 0x7A) e terminado por ë\0í.
-	O string deve conter o nome e n˙mero do cart„o dos participantes do grupo.
+Fun√ß√£o: Usada para identificar os desenvolvedores do T2FS.
+	Essa fun√ß√£o copia um string de identifica√ß√£o para o ponteiro indicado por "name".
+	Essa c√≥pia n√£o pode exceder o tamanho do buffer, informado pelo par√¢metro "size".
+	O string deve ser formado apenas por caracteres ASCII (Valores entre 0x20 e 0x7A) e terminado por ‚Äò\0‚Äô.
+	O string deve conter o nome e n√∫mero do cart√£o dos participantes do grupo.
 
-Entra:	name -> buffer onde colocar o string de identificaÁ„o.
-	size -> tamanho do buffer "name" (n˙mero m·ximo de bytes a serem copiados).
+Entra:	name -> buffer onde colocar o string de identifica√ß√£o.
+	size -> tamanho do buffer "name" (n√∫mero m√°ximo de bytes a serem copiados).
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int identify2 (char *name, int size);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o: Criar um novo arquivo.
-	O nome desse novo arquivo È aquele informado pelo par‚metro "filename".
-	O contador de posiÁ„o do arquivo (current pointer) deve ser colocado na posiÁ„o zero.
-	Caso j· exista um arquivo ou diretÛrio com o mesmo nome, a funÁ„o dever· retornar um erro de criaÁ„o.
-	A funÁ„o deve retornar o identificador (handle) do arquivo.
-	Esse handle ser· usado em chamadas posteriores do sistema de arquivo para fins de manipulaÁ„o do arquivo criado.
+Fun√ß√£o: Criar um novo arquivo.
+	O nome desse novo arquivo √© aquele informado pelo par√¢metro "filename".
+	O contador de posi√ß√£o do arquivo (current pointer) deve ser colocado na posi√ß√£o zero.
+	Caso j√° exista um arquivo ou diret√≥rio com o mesmo nome, a fun√ß√£o dever√° retornar um erro de cria√ß√£o.
+	A fun√ß√£o deve retornar o identificador (handle) do arquivo.
+	Esse handle ser√° usado em chamadas posteriores do sistema de arquivo para fins de manipula√ß√£o do arquivo criado.
 
 Entra:	filename -> path absoluto para o arquivo a ser criado. Todo o "path" deve existir.
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna o handle do arquivo (n˙mero positivo).
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna o handle do arquivo (n√∫mero positivo).
 	Em caso de erro, deve ser retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 FILE2 create2 (char *filename);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Apagar um arquivo do disco.
-	O nome do arquivo a ser apagado È aquele informado pelo par‚metro "filename".
+Fun√ß√£o:	Apagar um arquivo do disco.
+	O nome do arquivo a ser apagado √© aquele informado pelo par√¢metro "filename".
 
 Entra:	filename -> nome do arquivo a ser apagado.
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int delete2 (char *filename);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Abre um arquivo existente no disco.
-	O nome desse novo arquivo È aquele informado pelo par‚metro "filename".
-	Ao abrir um arquivo, o contador de posiÁ„o do arquivo (current pointer) deve ser colocado na posiÁ„o zero.
-	A funÁ„o deve retornar o identificador (handle) do arquivo.
-	Esse handle ser· usado em chamadas posteriores do sistema de arquivo para fins de manipulaÁ„o do arquivo criado.
-	Todos os arquivos abertos por esta chamada s„o abertos em leitura e em escrita.
-	O ponto em que a leitura, ou escrita, ser· realizada È fornecido pelo valor current_pointer (ver funÁ„o seek2).
+Fun√ß√£o:	Abre um arquivo existente no disco.
+	O nome desse novo arquivo √© aquele informado pelo par√¢metro "filename".
+	Ao abrir um arquivo, o contador de posi√ß√£o do arquivo (current pointer) deve ser colocado na posi√ß√£o zero.
+	A fun√ß√£o deve retornar o identificador (handle) do arquivo.
+	Esse handle ser√° usado em chamadas posteriores do sistema de arquivo para fins de manipula√ß√£o do arquivo criado.
+	Todos os arquivos abertos por esta chamada s√£o abertos em leitura e em escrita.
+	O ponto em que a leitura, ou escrita, ser√° realizada √© fornecido pelo valor current_pointer (ver fun√ß√£o seek2).
 
 Entra:	filename -> nome do arquivo a ser apagado.
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna o handle do arquivo (n˙mero positivo)
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna o handle do arquivo (n√∫mero positivo)
 	Em caso de erro, deve ser retornado um valor negativo
 -----------------------------------------------------------------------------*/
 FILE2 open2 (char *filename);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Fecha o arquivo identificado pelo par‚metro "handle".
+Fun√ß√£o:	Fecha o arquivo identificado pelo par√¢metro "handle".
 
 Entra:	handle -> identificador do arquivo a ser fechado
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int close2 (FILE2 handle);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Realiza a leitura de "size" bytes do arquivo identificado por "handle".
-	Os bytes lidos s„o colocados na ·rea apontada por "buffer".
-	ApÛs a leitura, o contador de posiÁ„o (current pointer) deve ser ajustado para o byte seguinte ao ˙ltimo lido.
+Fun√ß√£o:	Realiza a leitura de "size" bytes do arquivo identificado por "handle".
+	Os bytes lidos s√£o colocados na √°rea apontada por "buffer".
+	Ap√≥s a leitura, o contador de posi√ß√£o (current pointer) deve ser ajustado para o byte seguinte ao √∫ltimo lido.
 
 Entra:	handle -> identificador do arquivo a ser lido
 	buffer -> buffer onde colocar os bytes lidos do arquivo
-	size -> n˙mero de bytes a serem lidos
+	size -> n√∫mero de bytes a serem lidos
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna o n˙mero de bytes lidos.
-	Se o valor retornado for menor do que "size", ent„o o contador de posiÁ„o atingiu o final do arquivo.
-	Em caso de erro, ser· retornado um valor negativo.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna o n√∫mero de bytes lidos.
+	Se o valor retornado for menor do que "size", ent√£o o contador de posi√ß√£o atingiu o final do arquivo.
+	Em caso de erro, ser√° retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 int read2 (FILE2 handle, char *buffer, int size);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Realiza a escrita de "size" bytes no arquivo identificado por "handle".
-	Os bytes a serem escritos est„o na ·rea apontada por "buffer".
-	ApÛs a escrita, o contador de posiÁ„o (current pointer) deve ser ajustado para o byte seguinte ao ˙ltimo escrito.
+Fun√ß√£o:	Realiza a escrita de "size" bytes no arquivo identificado por "handle".
+	Os bytes a serem escritos est√£o na √°rea apontada por "buffer".
+	Ap√≥s a escrita, o contador de posi√ß√£o (current pointer) deve ser ajustado para o byte seguinte ao √∫ltimo escrito.
 
 Entra:	handle -> identificador do arquivo a ser escrito
 	buffer -> buffer de onde pegar os bytes a serem escritos no arquivo
-	size -> n˙mero de bytes a serem escritos
+	size -> n√∫mero de bytes a serem escritos
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna o n˙mero de bytes efetivamente escritos.
-	Em caso de erro, ser· retornado um valor negativo.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna o n√∫mero de bytes efetivamente escritos.
+	Em caso de erro, ser√° retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 int write2 (FILE2 handle, char *buffer, int size);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	FunÁ„o usada para truncar um arquivo.
-	Remove do arquivo todos os bytes a partir da posiÁ„o atual do contador de posiÁ„o (CP)
-	Todos os bytes a partir da posiÁ„o CP (inclusive) ser„o removidos do arquivo.
-	ApÛs a operaÁ„o, o arquivo dever· contar com CP bytes e o ponteiro estar· no final do arquivo
+Fun√ß√£o:	Fun√ß√£o usada para truncar um arquivo.
+	Remove do arquivo todos os bytes a partir da posi√ß√£o atual do contador de posi√ß√£o (CP)
+	Todos os bytes a partir da posi√ß√£o CP (inclusive) ser√£o removidos do arquivo.
+	Ap√≥s a opera√ß√£o, o arquivo dever√° contar com CP bytes e o ponteiro estar√° no final do arquivo
 
 Entra:	handle -> identificador do arquivo a ser truncado
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int truncate2 (FILE2 handle);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Reposiciona o contador de posiÁıes (current pointer) do arquivo identificado por "handle".
-	A nova posiÁ„o È determinada pelo par‚metro "offset".
-	O par‚metro "offset" corresponde ao deslocamento, em bytes, contados a partir do inÌcio do arquivo.
-	Se o valor de "offset" for "-1", o current_pointer dever· ser posicionado no byte seguinte ao final do arquivo,
-		Isso È ˙til para permitir que novos dados sejam adicionados no final de um arquivo j· existente.
+Fun√ß√£o:	Reposiciona o contador de posi√ß√µes (current pointer) do arquivo identificado por "handle".
+	A nova posi√ß√£o √© determinada pelo par√¢metro "offset".
+	O par√¢metro "offset" corresponde ao deslocamento, em bytes, contados a partir do in√≠cio do arquivo.
+	Se o valor de "offset" for "-1", o current_pointer dever√° ser posicionado no byte seguinte ao final do arquivo,
+		Isso √© √∫til para permitir que novos dados sejam adicionados no final de um arquivo j√° existente.
 
 Entra:	handle -> identificador do arquivo a ser escrito
 	offset -> deslocamento, em bytes, onde posicionar o "current pointer".
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int seek2 (FILE2 handle, unsigned int offset);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Criar um novo diretÛrio.
-	O caminho desse novo diretÛrio È aquele informado pelo par‚metro "pathname".
+Fun√ß√£o:	Criar um novo diret√≥rio.
+	O caminho desse novo diret√≥rio √© aquele informado pelo par√¢metro "pathname".
 		O caminho pode ser ser absoluto ou relativo.
-	S„o considerados erros de criaÁ„o quaisquer situaÁıes em que o diretÛrio n„o possa ser criado.
-		Isso inclui a existÍncia de um arquivo ou diretÛrio com o mesmo "pathname".
+	S√£o considerados erros de cria√ß√£o quaisquer situa√ß√µes em que o diret√≥rio n√£o possa ser criado.
+		Isso inclui a exist√™ncia de um arquivo ou diret√≥rio com o mesmo "pathname".
 
-Entra:	pathname -> caminho do diretÛrio a ser criado
+Entra:	pathname -> caminho do diret√≥rio a ser criado
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int mkdir2 (char *pathname);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Apagar um subdiretÛrio do disco.
-	O caminho do diretÛrio a ser apagado È aquele informado pelo par‚metro "pathname".
-	S„o considerados erros quaisquer situaÁıes que impeÁam a operaÁ„o.
+Fun√ß√£o:	Apagar um subdiret√≥rio do disco.
+	O caminho do diret√≥rio a ser apagado √© aquele informado pelo par√¢metro "pathname".
+	S√£o considerados erros quaisquer situa√ß√µes que impe√ßam a opera√ß√£o.
 		Isso inclui:
-			(a) o diretÛrio a ser removido n„o est· vazio;
-			(b) "pathname" n„o existente;
-			(c) algum dos componentes do "pathname" n„o existe (caminho inv·lido);
-			(d) o "pathname" indicado n„o È um arquivo;
+			(a) o diret√≥rio a ser removido n√£o est√° vazio;
+			(b) "pathname" n√£o existente;
+			(c) algum dos componentes do "pathname" n√£o existe (caminho inv√°lido);
+			(d) o "pathname" indicado n√£o √© um arquivo;
 
-Entra:	pathname -> caminho do diretÛrio a ser criado
+Entra:	pathname -> caminho do diret√≥rio a ser criado
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int rmdir2 (char *pathname);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Altera o current path
-	O novo caminho do diretÛrio a ser usado como current path È aquele informado pelo par‚metro "pathname".
-	S„o considerados erros quaisquer situaÁıes que impeÁam a operaÁ„o.
+Fun√ß√£o:	Altera o current path
+	O novo caminho do diret√≥rio a ser usado como current path √© aquele informado pelo par√¢metro "pathname".
+	S√£o considerados erros quaisquer situa√ß√µes que impe√ßam a opera√ß√£o.
 		Isso inclui:
-			(a) "pathname" n„o existente;
-			(b) algum dos componentes do "pathname" n„o existe (caminho inv·lido);
-			(c) o "pathname" indicado n„o È um diretÛrio;
+			(a) "pathname" n√£o existente;
+			(b) algum dos componentes do "pathname" n√£o existe (caminho inv√°lido);
+			(c) o "pathname" indicado n√£o √© um diret√≥rio;
 
-Entra:	pathname -> caminho do diretÛrio a ser criado
+Entra:	pathname -> caminho do diret√≥rio a ser criado
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int chdir2 (char *pathname);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	FunÁ„o que informa o diretÛrio atual de trabalho.
-	O T2FS deve copiar o pathname do diretÛrio de trabalho, incluindo o ë\0í do final do string, para o buffer indicado por "pathname".
-	Essa cÛpia n„o pode exceder o tamanho do buffer, informado pelo par‚metro "size".
+Fun√ß√£o:	Fun√ß√£o que informa o diret√≥rio atual de trabalho.
+	O T2FS deve copiar o pathname do diret√≥rio de trabalho, incluindo o ‚Äò\0‚Äô do final do string, para o buffer indicado por "pathname".
+	Essa c√≥pia n√£o pode exceder o tamanho do buffer, informado pelo par√¢metro "size".
 
 Entra:	pathname -> ponteiro para buffer onde copiar o pathname
-	size -> tamanho do buffer "pathname" (n˙mero m·ximo de bytes a serem copiados).
-	
-SaÌda:
-	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Caso ocorra algum erro, a funÁ„o retorna um valor diferente de zero.
-	S„o considerados erros quaisquer situaÁıes que impeÁam a cÛpia do pathname do diretÛrio de trabalho para "pathname",
-	incluindo espaÁo insuficiente, conforme informado por "size".
+	size -> tamanho do buffer "pathname" (n√∫mero m√°ximo de bytes a serem copiados).
+
+Sa√≠da:
+	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Caso ocorra algum erro, a fun√ß√£o retorna um valor diferente de zero.
+	S√£o considerados erros quaisquer situa√ß√µes que impe√ßam a c√≥pia do pathname do diret√≥rio de trabalho para "pathname",
+	incluindo espa√ßo insuficiente, conforme informado por "size".
 -----------------------------------------------------------------------------*/
 int getcwd2 (char *pathname, int size);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Abre um diretÛrio existente no disco.
-	O caminho desse diretÛrio È aquele informado pelo par‚metro "pathname".
-	Se a operaÁ„o foi realizada com sucesso, a funÁ„o:
-		(a) deve retornar o identificador (handle) do diretÛrio
-		(b) deve posicionar o ponteiro de entradas (current entry) na primeira posiÁ„o v·lida do diretÛrio "pathname".
-	O handle retornado ser· usado em chamadas posteriores do sistema de arquivo para fins de manipulaÁ„o do diretÛrio.
+Fun√ß√£o:	Abre um diret√≥rio existente no disco.
+	O caminho desse diret√≥rio √© aquele informado pelo par√¢metro "pathname".
+	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o:
+		(a) deve retornar o identificador (handle) do diret√≥rio
+		(b) deve posicionar o ponteiro de entradas (current entry) na primeira posi√ß√£o v√°lida do diret√≥rio "pathname".
+	O handle retornado ser√° usado em chamadas posteriores do sistema de arquivo para fins de manipula√ß√£o do diret√≥rio.
 
-Entra:	pathname -> caminho do diretÛrio a ser aberto
+Entra:	pathname -> caminho do diret√≥rio a ser aberto
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna o identificador do diretÛrio (handle).
-	Em caso de erro, ser· retornado um valor negativo.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna o identificador do diret√≥rio (handle).
+	Em caso de erro, ser√° retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 DIR2 opendir2 (char *pathname);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Realiza a leitura das entradas do diretÛrio identificado por "handle".
-	A cada chamada da funÁ„o È lida a entrada seguinte do diretÛrio representado pelo identificador "handle".
-	Algumas das informaÁıes dessas entradas devem ser colocadas no par‚metro "dentry".
-	ApÛs realizada a leitura de uma entrada, o ponteiro de entradas (current entry) È ajustado para a prÛxima entrada v·lida
-	S„o considerados erros:
-		(a) tÈrmino das entradas v·lidas do diretÛrio identificado por "handle".
-		(b) qualquer situaÁ„o que impeÁa a realizaÁ„o da operaÁ„o
+Fun√ß√£o:	Realiza a leitura das entradas do diret√≥rio identificado por "handle".
+	A cada chamada da fun√ß√£o √© lida a entrada seguinte do diret√≥rio representado pelo identificador "handle".
+	Algumas das informa√ß√µes dessas entradas devem ser colocadas no par√¢metro "dentry".
+	Ap√≥s realizada a leitura de uma entrada, o ponteiro de entradas (current entry) √© ajustado para a pr√≥xima entrada v√°lida
+	S√£o considerados erros:
+		(a) t√©rmino das entradas v√°lidas do diret√≥rio identificado por "handle".
+		(b) qualquer situa√ß√£o que impe√ßa a realiza√ß√£o da opera√ß√£o
 
-Entra:	handle -> identificador do diretÛrio cujas entradas deseja-se ler.
-	dentry -> estrutura de dados onde a funÁ„o coloca as informaÁıes da entrada lida.
+Entra:	handle -> identificador do diret√≥rio cujas entradas deseja-se ler.
+	dentry -> estrutura de dados onde a fun√ß√£o coloca as informa√ß√µes da entrada lida.
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor negativo
-		Se o diretÛrio chegou ao final, retorna "-END_OF_DIR" (-1)
-		Outros erros, ser· retornado um outro valor negativo
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor negativo
+		Se o diret√≥rio chegou ao final, retorna "-END_OF_DIR" (-1)
+		Outros erros, ser√° retornado um outro valor negativo
 -----------------------------------------------------------------------------*/
 #define	END_OF_DIR	1
 int readdir2 (DIR2 handle, DIRENT2 *dentry);
 
 
 /*-----------------------------------------------------------------------------
-FunÁ„o:	Fecha o diretÛrio identificado pelo par‚metro "handle".
+Fun√ß√£o:	Fecha o diret√≥rio identificado pelo par√¢metro "handle".
 
-Entra:	handle -> identificador do diretÛrio que se deseja fechar (encerrar a operaÁ„o).
+Entra:	handle -> identificador do diret√≥rio que se deseja fechar (encerrar a opera√ß√£o).
 
-SaÌda:	Se a operaÁ„o foi realizada com sucesso, a funÁ„o retorna "0" (zero).
-	Em caso de erro, ser· retornado um valor diferente de zero.
+Sa√≠da:	Se a opera√ß√£o foi realizada com sucesso, a fun√ß√£o retorna "0" (zero).
+	Em caso de erro, ser√° retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int closedir2 (DIR2 handle);
 
