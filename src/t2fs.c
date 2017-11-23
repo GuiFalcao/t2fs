@@ -3,6 +3,8 @@
 #include "../include/apidisk.h"
 #include "../include/t2fs.h"
 
+#define system_init = 0;
+
 void superbloco_inst(struct t2fs_superbloco *sb)
 {
 
@@ -25,7 +27,23 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 
 }
 
-void fat_inst()
+void fat_init()
+
+void root_init(){
+	t2fs_record root;
+	root->TypeVal = 0x00;
+	root->name = "root";
+	root->bytesFileSize = ;
+	root->firstCluster = sb->RootDirCluster;
+
+}
+
+void init_system(){
+	superbloco_inst();
+	fat_init();
+	root_init();
+	system_init = 1;
+}
 
 DIR2 opendir2 (char *pathname)
 {
