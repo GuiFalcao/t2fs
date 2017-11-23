@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "t2fs.h"
+#include "../include/t2fs.h"
 
 void cmdMan(void);
 
@@ -82,9 +82,9 @@ struct	{
 	char	name[20];
 	void	(*f)(void);
 	char	*help;
-	
+
 } cmdList[] = {
-	
+
 	{ "exit",	cmdExit,	helpExit 	},
 	{ "x",		cmdExit,	helpExit 	},
 	{ "man",	cmdMan,		helpMan 	},
@@ -101,7 +101,7 @@ struct	{
 	{ "cd",		cmdChDir,	helpChDir 	},
 	{ "getcwd",	cmdGetCwd,	helpGetCwd 	},
 	{ "cwd",	cmdGetCwd,	helpGetCwd 	},
-	
+
 	{ "open",	cmdOpen,	helpOpen 	},
 	{ "read",	cmdRead,	helpRead	},
 	{ "rd",		cmdRead,	helpRead	},
@@ -118,12 +118,12 @@ struct	{
 	{ "truncate",	cmdTrunc,	helpTrunc	},
 	{ "trunc",	cmdTrunc,	helpTrunc	},
 	{ "tk",		cmdTrunc,	helpTrunc	},
-	
+
 	{ "cp",		cmdCp,		helpCp		},
 	{ "fscp",	cmdFscp,	helpFscp	},
 	{ "fim",	NULL,		NULL		}
 
-	
+
 };
 
 
@@ -145,7 +145,7 @@ int main()
     while (1) {
         printf ("T2FS> ");
         gets(cmd);
-        if( (token = strtok(cmd," \t")) != NULL ) {	
+        if( (token = strtok(cmd," \t")) != NULL ) {
 		flagAchou = 0;
 		for (i=0; cmdList[i].f!=NULL; i++) {
 			if (strcmp(cmdList[i].name, token)==0) {
@@ -177,9 +177,9 @@ Informa os comandos aceitos pelo programa de teste
 void cmdMan(void) {
 	int i;
 	char *token = strtok(NULL," \t");
-	
+
 	printf ("Testing program for T2FS - v 2017.2.0\n");
-	
+
 	if (token==NULL) {
 		for (i=0; strcmp(cmdList[i].name,"fim")!=0; i++) {
 			if (cmdList[i].help == cmdList[i+1].help) {
@@ -191,17 +191,17 @@ void cmdMan(void) {
 		printf ("\n");
 		return;
 	}
-	
+
 	for (i=0; strcmp(cmdList[i].name,"fim")!=0; i++) {
 		if (strcmp(cmdList[i].name,token)==0) {
 			printf ("%s: %s\n", cmdList[i].name, cmdList[i].help);
 		}
 	}
-	
+
 
 }
 
-	
+
 /**
 Chama da função identify2 da biblioteca e coloca o string de retorno na tela
 */
@@ -475,7 +475,7 @@ void cmdRead(void) {
     // show bytes read
     dump(buffer, err);
     printf ("%d bytes read from file-handle %d\n", err, handle);
-    
+
     free(buffer);
 }
 
@@ -577,15 +577,15 @@ void cmdLs(void) {
     DIRENT2 dentry;
     while(1) {
 	    int errCode = readdir2(d, &dentry);
-	    
+
 	    if (errCode==-END_OF_DIR)
 		    break;
-	    
+
 	    if (errCode!=0) {
 		    printf ("readdir2 error code: %d\n", errCode);
 		    break;
 	    }
-	    
+
 	    printf ("%c %8u %s\n", (dentry.fileType==0x02?'d':'-'), dentry.fileSize, dentry.name);
     }
 
@@ -623,14 +623,14 @@ void cmdTrunc(void) {
         printf ("Invalid parameter\n");
         return;
     }
-    
+
     // posiciona CP na posicao selecionada
     int err = seek2(handle, size);
     if (err<0) {
         printf ("Error seek2: %d\n", err);
         return;
     }
-    
+
     // trunca
     err = truncate2(handle);
     if (err<0) {
@@ -676,15 +676,15 @@ void cmdSeek(void) {
     }
 
     printf ("Seek completado para a posicao %d\n", size);
-    
+
 }
 
 void cmdChDir(void) {
-	
+
 }
 
 void cmdGetCwd(void) {
-	
+
 }
 
 

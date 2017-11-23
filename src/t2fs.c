@@ -25,6 +25,8 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 
 }
 
+void fat_inst()
+
 DIR2 opendir2 (char *pathname)
 {
 	char *buffer;
@@ -51,7 +53,16 @@ DIR2 opendir2 (char *pathname)
 	printf("%s", buffer);
 }
 
-
+int identify2 (char *name, int size)
+{
+	char group_id[] = "Guillermo Falcão - 217434\nHermes Tessaro - 218317\nRafael Allegretti - 215020";
+  if(size < sizeof(devs)) return 1;
+  else
+  {
+    strncpy(name, grupo, sizeof(devs));
+    return 0;
+  }
+}
 
 int main()
 {
