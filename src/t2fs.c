@@ -30,13 +30,20 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 }
 
 void fat_init(){
-	int i = 0;
+	int i = 0, total;
+	int fat[];
 	int numberOfSectors = (int *) sb->DataSectorCluster - (int *) sb->pFATSectorStart;
-	for(i=0;i<numberOfSectors;i++){
-		read_sector(pFATSectorStart+i, fat+i*256);
-	}
+	//for(i=0;i<numberOfSectors;i++){
+	//	read_sector(pFATSectorStart+i, fat+i*256);
+	//}
+	total = (numberOfSectors * SECTOR_SIZE) / 4;
+	for(i=0; i < total; i++){
+	   fat[i] = 0x00000000;
+	 }
+	 fat[0] = 0x00000001;
+	 fat[1] = 0x00000001;	
 }
-	
+
 void root_init(){
 	root->TypeVal = 0x00;
 	root->name = "/";
@@ -97,7 +104,7 @@ int mkdir2 (char *pathname)
 
 	//array to save all direrctory records from the cluster
 	t2fs_record* entries = (t2fs_record*) cluster_buffer;
-	
+
 	int i = 0;
 	int clusterOfFatherDirectory;
 	int found = 0;
@@ -119,7 +126,7 @@ int mkdir2 (char *pathname)
 				}
 			}
 			if(found == 0){
-				//NÃO ACHOU O NOME DA PASTA -> ou ela não existe, ou é a que precisa ser criada 
+				//NÃO ACHOU O NOME DA PASTA -> ou ela não existe, ou é a que precisa ser criada
 				if(strtok(NULL, "/")==NULL){
 					//então acabou a palavra, é o diretório que tu precisa criar
 					for(i=0; i<SectorsPerCluster*4;i++){
