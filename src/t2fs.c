@@ -36,7 +36,7 @@ void fat_init(){
 		read_sector(pFATSectorStart+i, fat+i*256);
 	}
 }
-
+	
 void root_init(){
 	root->TypeVal = 0x00;
 	root->name = "/";
