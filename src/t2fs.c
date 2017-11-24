@@ -5,6 +5,7 @@
 
 #define system_init = 0;
 t2fs_record *root = NULL;
+int *fat = NULL;
 
 void superbloco_inst(struct t2fs_superbloco *sb)
 {
@@ -22,13 +23,19 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 	strncpy(sb->SectorsPerCluster, buffer+16, 4);
 	strncpy(sb->pFATSectorStart, buffer+20, 4);
 	strncpy(sb->RootDirCluster, buffer+24, 4);
-	strncpy(sb->version, buffer+28, 4);
+	strncpy(sb->DataSectorCluster, buffer+28, 4);
 
 	return;
 
 }
 
-void fat_init()
+void fat_init(){
+	int i = 0;
+	int numberOfSectors = (int *) sb->DataSectorCluster - (int *) sb->pFATSectorStart;
+	for(i=0;i<numberOfSectors;i++){
+		read_sector(pFATSectorStart+i, fat+i*256);
+	}
+}
 
 void root_init(){
 	root->TypeVal = 0x00;
