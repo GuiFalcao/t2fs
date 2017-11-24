@@ -4,6 +4,7 @@
 #include "../include/t2fs.h"
 
 #define system_init = 0;
+t2fs_record *root = NULL;
 
 void superbloco_inst(struct t2fs_superbloco *sb)
 {
@@ -30,10 +31,9 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 void fat_init()
 
 void root_init(){
-	t2fs_record root;
 	root->TypeVal = 0x00;
-	root->name = "root";
-	root->bytesFileSize = ;
+	root->name = "/";
+	root->bytesFileSize = 256*SectorsPerCluster;
 	root->firstCluster = sb->RootDirCluster;
 
 }
@@ -44,6 +44,130 @@ void init_system(){
 	root_init();
 	system_init = 1;
 }
+
+int read_cluster (int cluster, unsigned char *buffer)
+{
+	int i = 0;
+	for(i=0;i<sb->SectorsPerCluster;i++){
+		read_sector(cluster+i*256, buffer+i*256)
+	}
+
+	return 0;
+}
+
+int write_cluster (int cluster, unsigned char *buffer)
+{
+	int i = 0;
+	for(i=0;i<sb->SectorsPerCluster;i++){
+		write_sector(cluster+i*256, buffer+i*256)
+	}
+
+	return 0;
+}
+
+
+//Função que percorre a FAT pra achar um cluster livre, ocupa o valor e retorna o indice
+int findsFreeCluster(int type){
+	return 1;
+}
+/*-----------------------------------------------------------------------------
+Função:	Criar um novo diretório.
+	O caminho desse novo diretório é aquele informado pelo parâmetro "pathname".
+		O caminho pode ser ser absoluto ou relativo.
+	São considerados erros de criação quaisquer situações em que o diretório não possa ser criado.
+		Isso inclui a existência de um arquivo ou diretório com o mesmo "pathname".
+
+Entra:	pathname -> caminho do diretório a ser criado
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int mkdir2 (char *pathname)
+{
+
+	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
+	read_cluster(root->firstCluster,cluster_buffer);
+
+	//array to save all direrctory records from the cluster
+	t2fs_record* entries = (t2fs_record*) cluster_buffer;
+	
+	int i = 0;
+	int clusterOfFatherDirectory;
+	int found = 0;
+	//if the pathname isn't root, then the program must search for the correct directory
+	if(strcmp(pathname, "/") != 0){
+		char* word;
+		//word is the current directory name being looked for
+		for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
+		{
+			found = 0;
+			//searchs for the given name in the directory records' array
+			for(i=0, i<SectorsPerCluster*4;i++){
+				if(strcmp(word, entries[i]->name) == 0){
+					//if found the directory, reads its cluster
+					clusterOfFatherDirectory = entries[i]->firstCluster;
+					read_cluster(entries[i]->firstCluster, cluster_buffer);
+					entries = (t2fs_record*) cluster_buffer;
+					found = 1;
+				}
+			}
+			if(found == 0){
+				//NÃO ACHOU O NOME DA PASTA -> ou ela não existe, ou é a que precisa ser criada 
+				if(strtok(NULL, "/")==NULL){
+					//então acabou a palavra, é o diretório que tu precisa criar
+					for(i=0; i<SectorsPerCluster*4;i++){
+						//percorre o array de entries pra achar uma entrada livre
+						if(entries[i]->TypeVal = 0){
+						//se o tipo de valor é 0, o arquivo não está sendo usado
+						//escreve o cluster atualizado do diretório pai com a nova entrada de diretório
+							entries[i]->TypeVal = 2;
+							strncpy(entries[i]->name, word, 55);
+							entries[i]->bytesFileSize = SectorsPerCluster*4;
+							int free = findsFreeCluster(2);
+							entries[i]->firstCluster = free;
+							write_cluster(clusterOfFatherDirectory, (char*) entries);
+
+							//aloca um buffer pra escrever as entradas do novo diretório
+							t2fs_record* new_cluster_buffer = (t2fs_record *)malloc(256*sb->SectorsPerCluster);
+
+							//escreve a entrada .
+							new_cluster_buffer[0]->TypeVal = 2;
+							strncpy(new_cluster_buffer[0]->name, ".", 55);
+							new_cluster_buffer[0]->bytesFileSize = SectorsPerCluster*4;
+							new_cluster_buffer[0]->firstCluster = free;
+
+							//escreve a entrada ..
+							new_cluster_buffer[1]->TypeVal = 2;
+							strncpy(new_cluster_buffer[1]->name, "..", 55);
+							new_cluster_buffer[1]->bytesFileSize = SectorsPerCluster*4;
+							new_cluster_buffer[1]->firstCluster = clusterOfFatherDirectory;
+
+							//escreve o novo cluster
+							write_cluster(free, (char *) new_cluster_buffer);
+							free(new_cluster_buffer);
+							return 0;
+						}
+					}
+					//não achou entrada livre, retorna erro
+					return -1;
+				}
+				else{
+					//o caminho dado não existe, retorna erro
+					return -1;
+				}
+			}
+		}
+
+	}
+
+	for(i=0, i<SectorsPerCluster*4;i++){
+		if(strcmp(pathname, entries[i]->name)){
+			//ACHOU NO ROOT
+		}
+	}
+	//NAO ACHOU NO ROOT
+}
+
 
 DIR2 opendir2 (char *pathname)
 {
