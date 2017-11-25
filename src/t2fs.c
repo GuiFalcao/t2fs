@@ -33,14 +33,16 @@ void fat_init(){
 	int i = 0, y = 0, total;
 	int fat[];
 	char *buffer;
-	int numberOfSectors = (int *) sb->DataSectorCluster - (int *) sb->pFATSectorStart;
+
+	int numberOfSectors = (int *) sb->DataSectorStart - (int *) sb->pFATSectorStart;
 	//for(i=0;i<numberOfSectors;i++){
 	//	read_sector(pFATSectorStart+i, fat+i*256);
 	//}
-	total = (numberOfSectors * SECTOR_SIZE) / 4;
+
+	//total é a quantidade de bytes que tem na fat
+	total = numberOfSectors * SECTOR_SIZE;
 	for(i=0; i < total; i++){
-	   fat[i] = 0x00000000;
-		 strncpy(buffer+i, buffer, 4);
+	   	fat[i] = 0x00000000;
 	 }
 	 fat[0] = 0x00000001;
 	 fat[1] = 0x00000001;
@@ -105,13 +107,14 @@ int mkdir2 (char *pathname)
 	read_cluster(root->firstCluster,cluster_buffer);
 
 	//array to save all direrctory records from the cluster
+	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
 	t2fs_record* entries = (t2fs_record*) cluster_buffer;
 
 	int i = 0;
 	int clusterOfFatherDirectory;
 	int found = 0;
 	//if the pathname isn't root, then the program must search for the correct directory
-	if(strcmp(pathname, "/") != 0){
+	//if(strcmp(pathname, "/") != 0){
 		char* word;
 		//word is the current directory name being looked for
 		for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
@@ -175,14 +178,14 @@ int mkdir2 (char *pathname)
 			}
 		}
 
-	}
+	//}
 
-	for(i=0, i<SectorsPerCluster*4;i++){
+	/*for(i=0, i<SectorsPerCluster*4;i++){
 		if(strcmp(pathname, entries[i]->name)){
 			//ACHOU NO ROOT
 		}
 	}
-	//NAO ACHOU NO ROOT
+	//NAO ACHOU NO ROOT*/
 }
 
 /*-----------------------------------------------------------------------------
@@ -195,7 +198,7 @@ Função:	Apagar um subdiretório do disco.
 			(c) algum dos componentes do "pathname" não existe (caminho inválido);
 			(d) o "pathname" indicado não é um arquivo;
 
-Entra:	pathname -> caminho do diretório a ser criado
+Entra:	pathname -> caminho do diretório a ser apagado
 
 Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
 	Em caso de erro, será retornado um valor diferente de zero.
@@ -213,51 +216,51 @@ int rmdir2 (char *pathname)
 	int clusterOfFatherDirectory;
 	int found = 0;
 	int vazio = 0;
-	//if the pathname isn't root, then the program must search for the correct directory
-	if(strcmp(pathname, "/") != 0)
-	{
-		char* word;
-		//word is the current directory name being looked for
-		for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
-		{
-			found = 0;
-			//searchs for the given name in the directory records' array
-			for(i=0, i<SectorsPerCluster*4;i++){
-				if(strcmp(word, entries[i]->name) == 0){
-					//if found the directory, reads its cluster
-					clusterOfFatherDirectory = entries[i]->firstCluster;
-					read_cluster(entries[i]->firstCluster, cluster_buffer);
-					entries = (t2fs_record*) cluster_buffer;
-					found = 1;
-				}
-			}
-			if(found == 0){
-				//NAO ACHOU O NOME DA PASTA RETORNA ERRO
-				return -1;
-				}
-			}
-			//ACHOU TODO CAMINHO ATE O DIRETORIO
-			for(i=0, i<SectorsPerCluster*4;i++){
-				if(!(entries[i]->TypeVal == 0x00)){
-					//SE ALGUMA ENTRADA NÃO FOR VAZIA RETORNA ERRO
-					return -1
-				}
-			}
-			//ACHOU O DIRETORIO E ESTA VAZIO
 
+	if(strcmp(pathname,"/") == 0){
+		//NÃO É POSSÍVEL DELETAR O /
+		return -1;
+	}
+	char* word;
+	//word is the current directory name being looked for
+	for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
+	{
+		found = 0;
+		//searchs for the given name in the directory records' array
+		for(i=0, i<SectorsPerCluster*4;i++){
+			if(strcmp(word, entries[i]->name) == 0){
+				//if found the directory, reads its cluster
+				clusterOfFatherDirectory = entries[i]->firstCluster;
+				read_cluster(entries[i]->firstCluster, cluster_buffer);
+				entries = (t2fs_record*) cluster_buffer;
+				found = 1;
+			}
 		}
-		//NAO É POSSIVEL DELETAR O ROOT
-		return -1;
-
+		if(found == 0){
+			//NAO ACHOU O NOME DA PASTA RETORNA ERRO
+			return -1;
+		}
 	}
-
-	else//Caso o diretorio que deseja ser removido seja o root, retorna erro.
-	{
-		printf("ERRO! Tentando excluir root");
-		return -1;
+	//ACHOU TODO CAMINHO ATE O DIRETORIO
+	for(i=0, i<SectorsPerCluster*4;i++){
+		if(!(entries[i]->TypeVal == 0x00)){
+			//SE ALGUMA ENTRADA NÃO FOR VAZIA E NAO FOR O . E O .. RETORNA ERRO
+			if((strcmp(entries[i]->name, ".")!=0)&&(strcmp(entries[i]->name, "..")!=0))
+				return -1
+		}
 	}
-	//NAO ACHOU NO ROOT
+	//ACHOU O DIRETORIO E ESTA VAZIO
+	//zera o cluster do diretório
+	cluster_buffer = {0};
+	write_cluster(entries[i]->firstCluster, cluster_buffer);
+
+	//apaga a entrada do cluster na fat
+	fat[entries[i]->firstCluster] = 0;
+
+	return 0;
+	
 }
+
 
 
 
@@ -287,6 +290,8 @@ DIR2 opendir2 (char *pathname)
 
 	printf("%s", buffer);
 }
+
+
 //IDENTIFY PRONTO!!!
 int identify2 (char *name, int size)
 {
@@ -297,11 +302,4 @@ int identify2 (char *name, int size)
     strncpy(name, grupo_id, sizeof(group_id));
     return 0;
   }
-}
-
-int main()
-{
-	char *pathname;
-	pathname = "blabla";
-	opendir2(pathname);
 }
