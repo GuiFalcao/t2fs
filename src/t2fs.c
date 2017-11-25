@@ -6,6 +6,8 @@
 #define system_init = 0;
 t2fs_record *root = NULL;
 int *fat = NULL;
+t2fs_record *current_directory = NULL;
+t2fs_record *current_file = NULL;
 
 void superbloco_inst(struct t2fs_superbloco *sb)
 {
@@ -86,7 +88,14 @@ int write_cluster (int cluster, unsigned char *buffer)
 
 //Função que percorre a FAT pra achar um cluster livre, ocupa o valor e retorna o indice
 int findsFreeCluster(int type){
-	return 1;
+	int i=0;
+	for(i=0; i<sizeof(fat); i++){
+		if(fat[i] == 0){
+			fat[i] = type;
+			return i;
+		}
+	}
+	return -1;
 }
 /*-----------------------------------------------------------------------------
 Função:	Criar um novo diretório.
@@ -104,20 +113,35 @@ int mkdir2 (char *pathname)
 {
 
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
-	read_cluster(root->firstCluster,cluster_buffer);
-
-	//array to save all direrctory records from the cluster
-	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
-	t2fs_record* entries = (t2fs_record*) cluster_buffer;
-
+	t2fs_record* entries;
 	int i = 0;
 	int clusterOfFatherDirectory;
 	int found = 0;
-	//if the pathname isn't root, then the program must search for the correct directory
+
+	//se for caminho relativo
+	if(pathname[0] == ".")
+	{
+		if(current_directory == NULL){
+			printf("nao ha diretorio aberto\n");
+			return -1;
+		}
+		read_cluster(current_directory->firstCluster, cluster_buffer);
+		clusterOfFatherDirectory = current_directory->firstCluster;
+
+	}
+	//se for absoluto
+	else{
+		read_cluster(root->firstCluster,cluster_buffer);
+		clusterOfFatherDirectory = root->firstCluster;
+	}
+	//array to save all direrctory records from the cluster
+	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
+	entries = (t2fs_record*) cluster_buffer;
+
 	//if(strcmp(pathname, "/") != 0){
 		char* word;
 		//word is the current directory name being looked for
-		for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
+		for (word = strtok(pathname, "/"); word; word = strtok(NULL, "/"))
 		{
 			found = 0;
 			//searchs for the given name in the directory records' array
@@ -207,15 +231,39 @@ int rmdir2 (char *pathname)
 {
 
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
-	read_cluster(root->firstCluster,cluster_buffer);
-
 	//array to save all direrctory records from the cluster
-	t2fs_record* entries = (t2fs_record*) cluster_buffer;
+	t2fs_record* entries;
 
 	int i = 0;
-	int clusterOfFatherDirectory;
+	int clusterOfFatherDirectory = -1;
 	int found = 0;
 	int vazio = 0;
+
+	//se for caminho relativo
+	if(pathname[0] == ".")
+	{
+		if(current_directory == NULL){
+			printf("nao ha diretorio aberto\n");
+			return -1;
+		}
+		read_cluster(current_directory->firstCluster, cluster_buffer);
+		entries  = (t2fs_record*) cluster_buffer;
+		for(i=0;i<SectorsPerCluster*4;i++){
+			if(strncmp(entries[i], "..")==0){
+				clusterOfFatherDirectory = entries[i]->firstCluster;
+			}
+		}
+		if(clusterOfFatherDirectory == -1){
+			return -1;
+		}
+	}
+	else{
+	//se for absoluto
+		read_cluster(root->firstCluster,cluster_buffer);
+		clusterOfFatherDirectory = root->firstCluster;
+
+	}
+	
 
 	if(strcmp(pathname,"/") == 0){
 		//NÃO É POSSÍVEL DELETAR O /
@@ -263,10 +311,55 @@ int rmdir2 (char *pathname)
 
 
 
+/*-----------------------------------------------------------------------------
+Função:	Abre um diretório existente no disco.
+	O caminho desse diretório é aquele informado pelo parâmetro "pathname".
+	Se a operação foi realizada com sucesso, a função:
+		(a) deve retornar o identificador (handle) do diretório
+		(b) deve posicionar o ponteiro de entradas (current entry) na primeira posição válida do diretório "pathname".
+	O handle retornado será usado em chamadas posteriores do sistema de arquivo para fins de manipulação do diretório.
 
+Entra:	pathname -> caminho do diretório a ser aberto
 
+Saída:	Se a operação foi realizada com sucesso, a função retorna o identificador do diretório (handle).
+	Em caso de erro, será retornado um valor negativo.
+-----------------------------------------------------------------------------*/
 DIR2 opendir2 (char *pathname)
 {
+
+	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
+	t2fs_record* entries;
+	int i = 0;
+	int clusterOfFatherDirectory;
+	int found = 0;
+
+	//se for caminho relativo
+	if(pathname[0] == ".")
+	{
+		if(current_directory == NULL){
+			printf("nao ha diretorio aberto\n");
+			return -1;
+		}
+		read_cluster(current_directory->firstCluster, cluster_buffer);
+		clusterOfFatherDirectory = current_directory->firstCluster;
+
+	}
+	//se for absoluto
+	else{
+		read_cluster(root->firstCluster,cluster_buffer);
+		clusterOfFatherDirectory = root->firstCluster;
+	}
+	//array to save all direrctory records from the cluster
+	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
+	entries = (t2fs_record*) cluster_buffer;
+
+	//if(strcmp(pathname, "/") != 0){
+		char* word;
+		//word is the current directory name being looked for
+		for (word = strtok(pathname, "/"); word; word = strtok(NULL, "/"))
+		{
+			found = 0;
+
 	char *buffer;
 	struct t2fs_superbloco *sb;
 
