@@ -128,7 +128,7 @@ int mkdir2 (char *pathname)
 				}
 			}
 			if(found == 0){
-				//NÃO ACHOU O NOME DA PASTA -> ou ela não existe, ou é a que precisa ser criada
+				//NAO ACHOU O NOME DA PASTA -> ou ela não existe, ou é a que precisa ser criada
 				if(strtok(NULL, "/")==NULL)
 					{
 						//então acabou a palavra, é o diretório que tu precisa criar
@@ -232,26 +232,26 @@ int rmdir2 (char *pathname)
 				}
 			}
 			if(found == 0){
-				//NÃO ACHOU O NOME DA PASTA RETORNA ERRO
+				//NAO ACHOU O NOME DA PASTA RETORNA ERRO
 				return -1;
 				}
 			}
-			//ACHOU TODO CAMINHO ATÉ O DIRETÓRIO
+			//ACHOU TODO CAMINHO ATE O DIRETORIO
 			for(i=0, i<SectorsPerCluster*4;i++){
 				if(!(entries[i]->TypeVal == 0x00)){
 					//SE ALGUMA ENTRADA NÃO FOR VAZIA RETORNA ERRO
 					return -1
 				}
 			}
-			//ACHOU O DIRETÓRIO E ESTÁ VAZIO
-			
+			//ACHOU O DIRETORIO E ESTA VAZIO
+
 		}
-		//NÃO É POSSIVEL DELETAR O ROOT
+		//NAO É POSSIVEL DELETAR O ROOT
 		return -1;
 
 	}
 
-	else//Caso o diretório que deseja ser removido seja o root, retorna erro.
+	else//Caso o diretorio que deseja ser removido seja o root, retorna erro.
 	{
 		printf("ERRO! Tentando excluir root");
 		return -1;
@@ -287,14 +287,14 @@ DIR2 opendir2 (char *pathname)
 
 	printf("%s", buffer);
 }
-
+//IDENTIFY PRONTO!!!
 int identify2 (char *name, int size)
 {
-	char group_id[] = "Guillermo Falcão - 217434\nHermes Tessaro - 218317\nRafael Allegretti - 215020";
-  if(size < sizeof(devs)) return -1;
+	char group_id[] = "Guillermo Falcao - 217434\nHermes Tessaro - 218317\nRafael Allegretti - 215020";
+  if(size < sizeof(group_id)) return -1;
   else
   {
-    strncpy(name, grupo, sizeof(devs));
+    strncpy(name, grupo_id, sizeof(group_id));
     return 0;
   }
 }
