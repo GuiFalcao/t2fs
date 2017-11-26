@@ -263,7 +263,7 @@ int rmdir2 (char *pathname)
 		clusterOfFatherDirectory = root->firstCluster;
 
 	}
-	
+
 
 	if(strcmp(pathname,"/") == 0){
 		//NÃO É POSSÍVEL DELETAR O /
@@ -362,7 +362,7 @@ DIR2 opendir2 (char *pathname)
 				current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
 				current_directory->firstCluster = entries[i]->firstCluster;
 				//if found the directory, reads its cluster
-				
+
 				read_cluster(entries[i]->firstCluster, cluster_buffer);
 				entries = (t2fs_record*) cluster_buffer;
 				found = 1;
@@ -381,9 +381,28 @@ DIR2 opendir2 (char *pathname)
 	record->fileType = 2;
 	record->fileSize = current_directory->bytesfileSize;
 
-	
+
 
 	return record;
+}
+
+int readdir2 (DIR2 handle, DIRENT2 *dentry)
+{
+	if(!system_init){
+		init_system();
+	}
+	WORD cluster;
+  if(handle == current_directory){
+    return read_next_entry(current_directory, dentry, &cluster);
+  }
+  else{
+    if(handle > 10 || handle < 0 || directories[handle-1].active == false){
+      return -1;
+    }
+    else{
+      return read_next_entry(&(directories[handle-1]), dentry, &cluster);
+    }
+  }
 }
 
 
