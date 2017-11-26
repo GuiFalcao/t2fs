@@ -167,8 +167,8 @@ int mkdir2 (char *pathname)
 								entries[i]->TypeVal = 0x02;
 								strncpy(entries[i]->name, word, 55);
 								entries[i]->bytesFileSize = SectorsPerCluster*4;
-								int free = findsFreeCluster(2);
-								entries[i]->firstCluster = free;
+								int free_c = findsFreeCluster(2);
+								entries[i]->firstCluster = free_c;
 								write_cluster(clusterOfFatherDirectory, (char*) entries);
 
 								//aloca um buffer pra escrever as entradas do novo diretório
@@ -178,7 +178,7 @@ int mkdir2 (char *pathname)
 								new_cluster_buffer[0]->TypeVal = 0x02;
 								strncpy(new_cluster_buffer[0]->name, ".", 55);
 								new_cluster_buffer[0]->bytesFileSize = SectorsPerCluster*4;
-								new_cluster_buffer[0]->firstCluster = free;
+								new_cluster_buffer[0]->firstCluster = free_c;
 
 								//escreve a entrada ..
 								new_cluster_buffer[1]->TypeVal = 0x02;
@@ -187,7 +187,7 @@ int mkdir2 (char *pathname)
 								new_cluster_buffer[1]->firstCluster = clusterOfFatherDirectory;
 
 								//escreve o novo cluster
-								write_cluster(free, (char *) new_cluster_buffer);
+								write_cluster(free_c, (char *) new_cluster_buffer);
 								free(new_cluster_buffer);
 								return 0;
 							}
@@ -306,7 +306,7 @@ int rmdir2 (char *pathname)
 	fat[entries[i]->firstCluster] = 0;
 
 	return 0;
-	
+
 }
 
 
