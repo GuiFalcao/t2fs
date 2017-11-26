@@ -330,7 +330,6 @@ DIR2 opendir2 (char *pathname)
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	t2fs_record* entries;
 	int i = 0;
-	int clusterOfFatherDirectory;
 	int found = 0;
 
 	//se for caminho relativo
@@ -341,47 +340,50 @@ DIR2 opendir2 (char *pathname)
 			return -1;
 		}
 		read_cluster(current_directory->firstCluster, cluster_buffer);
-		clusterOfFatherDirectory = current_directory->firstCluster;
-
 	}
 	//se for absoluto
 	else{
 		read_cluster(root->firstCluster,cluster_buffer);
-		clusterOfFatherDirectory = root->firstCluster;
 	}
 	//array to save all direrctory records from the cluster
 	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
 	entries = (t2fs_record*) cluster_buffer;
 
-	//if(strcmp(pathname, "/") != 0){
-		char* word;
-		//word is the current directory name being looked for
-		for (word = strtok(pathname, "/"); word; word = strtok(NULL, "/"))
-		{
-			found = 0;
+	char* word;
+	//word is the current directory name being looked for
+	for (word = strtok(pathname, "/"); word; word = strtok(NULL, "/"))
+	{
+		found = 0;
+		//searchs for the given name in the directory records' array
+		for(i=0, i<SectorsPerCluster*4;i++){
+			if(strcmp(word, entries[i]->name) == 0){
+				strncpy(current_directory->name, word, sizeof(word));
+				current_directory->TypeVal = 2;
+				current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
+				current_directory->firstCluster = entries[i]->firstCluster;
+				//if found the directory, reads its cluster
+				
+				read_cluster(entries[i]->firstCluster, cluster_buffer);
+				entries = (t2fs_record*) cluster_buffer;
+				found = 1;
 
-	char *buffer;
-	struct t2fs_superbloco *sb;
+			}
+		}
+		if(found == 0){
+			//NAO ACHOU O NOME DA PASTA
+			return -1;
+		}
 
-	sb = (struct t2fs_superbloco *) malloc(32);
-	superbloco_inst(sb);
-	//memory allocation for the cluster
-	buffer = (char *) malloc(SECTOR_SIZE*sb->SectorsPerCluster);
-
-	int i=0;
-	int firstSector = sb->RootDirCluster *sb->SectorsPerCluster;
-
-	for (i = 0; i < sb->SectorsPerCluster; ++i){
-		read_sector(firstSector + i, buffer + i*SECTOR_SIZE);
 	}
 
-	//register with info about the directory
-	DIRENT2 *rootdir = (DIRENT2 *)malloc(sizeof(DIRENT2));
-	strncpy(rootdir->name, buffer, 56);
-	strncpy(rootdir->fileType, buffer+56, 4);
-	strncpy(rootdir->fileSize, buffer+60, 4);
+	DIRENT2 *record = (DIRENT2 *)malloc(sizeof(DIRENT2));
+	strncpy(record->name,current_directory->name, 56);
+	record->fileType = 2;
+	record->fileSize = current_directory->bytesfileSize;
 
-	printf("%s", buffer);
+	
+
+	return record;
 }
 
 
