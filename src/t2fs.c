@@ -427,12 +427,6 @@ int readdir2 (DIR2 handle, DIRENT2 *dentry)
 	//vai ler o diretório apontado pelo handle
 	read_cluster(open_directories[handle]->firstCluster, cluster_buffer);
 
-	typedef struct {
-    char    name[MAX_FILE_NAME_SIZE+1]; /* Nome do arquivo cuja entrada foi lida do disco      */
-    BYTE    fileType;                   /* Tipo do arquivo: regular (0x01) ou diretório (0x02) */
-    DWORD   fileSize;                   /* Numero de bytes do arquivo                          */
-} DIRENT2;
-
 	strncpy(dentry->fileType, cluster_buffer[offset*64], 1);
 	strncpy(dentry->name, cluster_buffer[offset*64 + 1], 55);
 	strncpy(dentry->fileSize, cluster_buffer[offset*64 + 56], 4)
