@@ -14,8 +14,12 @@ struct dir_struct {
 t2fs_record *root = NULL;
 int *fat = NULL;
 t2fs_record *current_directory = NULL;
+char *current_directory_path;
 t2fs_record *current_file = NULL;
 dir_struct open_directories[10] = {0};
+
+int DIRENT_PER_SECTOR;
+int debug = 1;
 
 
 
@@ -36,6 +40,7 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 	strncpy(sb->pFATSectorStart, buffer+20, 4);
 	strncpy(sb->RootDirCluster, buffer+24, 4);
 	strncpy(sb->DataSectorCluster, buffer+28, 4);
+	DIRENT_PER_SECTOR = sb->SectorsPerCluster*4;
 
 	return;
 
@@ -156,6 +161,12 @@ int mkdir2 (char *pathname)
 		//searchs for the given name in the directory records' array
 		for(i=0, i<SectorsPerCluster*4;i++){
 			if(strcmp(word, entries[i]->name) == 0){
+				if(entries[i]->TypeVal != 2){
+					if(debug = 1){
+						printf("nao é um diretório\n");
+					}
+					return -1;
+				}
 				//if found the directory, reads its cluster
 				clusterOfFatherDirectory = entries[i]->firstCluster;
 				read_cluster(entries[i]->firstCluster, cluster_buffer);
@@ -277,6 +288,12 @@ int rmdir2 (char *pathname)
 		//searchs for the given name in the directory records' array
 		for(i=0, i<SectorsPerCluster*4;i++){
 			if(strcmp(word, entries[i]->name) == 0){
+				if(entries[i]->TypeVal != 2){
+					if(debug = 1){
+						printf("nao é um diretório\n");
+					}
+					return -1;
+				}
 				//if found the directory, reads its cluster
 				clusterOfFatherDirectory = entries[i]->firstCluster;
 				read_cluster(entries[i]->firstCluster, cluster_buffer);
@@ -304,6 +321,123 @@ int rmdir2 (char *pathname)
 
 	//apaga a entrada do cluster na fat
 	fat[entries[i]->firstCluster] = 0;
+
+	return 0;
+
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Altera o current path
+	O novo caminho do diretório a ser usado como current path é aquele informado pelo parâmetro "pathname".
+	São considerados erros quaisquer situações que impeçam a operação.
+		Isso inclui:
+			(a) "pathname" não existente;
+			(b) algum dos componentes do "pathname" não existe (caminho inválido);
+			(c) o "pathname" indicado não é um diretório;
+
+Entra:	pathname -> caminho do diretório a ser criado
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int chdir2 (char *pathname){
+	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
+	//array to save all directory records from the cluster
+	t2fs_record* entries;
+
+	int i = 0;
+	int found = 0;
+
+	//se for caminho relativo
+	if(pathname[0] == ".")
+	{
+		if(current_directory == NULL){
+			printf("nao ha diretorio aberto\n");
+			return -1;
+		}
+		read_cluster(current_directory->firstCluster, cluster_buffer);
+	}
+	else{
+	//se for absoluto
+		read_cluster(root->firstCluster,cluster_buffer);
+	}
+
+	entries  = (t2fs_record*) cluster_buffer;
+	//entries agora tem as entradas de diretório do primeiro diretório do pathname: . se for relativo, / se for absoluto
+
+
+
+	char* word;
+	//word is the current directory name being looked for
+	for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
+	{
+		found = 0;
+		//searchs for the given name in the directory records' array
+		for(i=0, i<DIRENT_PER_SECTOR;i++){
+			if(strcmp(word, entries[i]->name) == 0){
+				if(entries[i]->TypeVal != 0x02){
+					if(debug = 1){
+						printf("nao é um diretório\n");
+					}
+					return -1;
+				}
+				//if found the directory, reads its cluster
+				read_cluster(entries[i]->firstCluster, cluster_buffer);
+				entries = (t2fs_record*) cluster_buffer;
+				found = 1;
+			}
+		}
+		if(found == 0){
+			if(debug = 1){
+				printf("nao achou o diretório\n");
+			}
+			//NAO ACHOU O NOME DA PASTA RETORNA ERRO
+			return -1;
+		}
+	}
+	
+	//ACHOU TODO CAMINHO ATE O DIRETORIO
+	strncpy(current_directory_path, pathname);
+	current_directory->TypeVal = 0x02;
+	current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
+	strncpy(current_directory->name, ".");
+	current_directory->firstCluster = entries[0]->firstCluster;
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Função que informa o diretório atual de trabalho.
+	O T2FS deve copiar o pathname do diretório de trabalho, incluindo o ‘\0’ do final do string, para o buffer indicado por "pathname".
+	Essa cópia não pode exceder o tamanho do buffer, informado pelo parâmetro "size".
+
+Entra:	pathname -> ponteiro para buffer onde copiar o pathname
+	size -> tamanho do buffer "pathname" (número máximo de bytes a serem copiados).
+
+Saída:
+	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Caso ocorra algum erro, a função retorna um valor diferente de zero.
+	São considerados erros quaisquer situações que impeçam a cópia do pathname do diretório de trabalho para "pathname",
+	incluindo espaço insuficiente, conforme informado por "size".
+-----------------------------------------------------------------------------*/
+int getcwd2 (char *pathname, int size){
+	if(current_directory == NULL){
+		if(debug = 1){
+			printf("nao está em diretorio nenhum\n");
+		}
+		return -1;
+	}
+
+	if(strlen(current_directory_path) > size){
+		if(debug = 1){
+			printf("tamanho insuficiente\n");
+		}
+		return -1;
+	}
+
+	strncpy(pathname, current_directory_path, size);
 
 	return 0;
 
@@ -349,6 +483,7 @@ DIR2 opendir2 (char *pathname)
 	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
 	entries = (t2fs_record*) cluster_buffer;
 
+	current_directory_path = NULL;
 	char* word;
 	//word is the current directory name being looked for
 	for (word = strtok(pathname, "/"); word; word = strtok(NULL, "/"))
@@ -358,6 +493,8 @@ DIR2 opendir2 (char *pathname)
 		for(i=0, i<SectorsPerCluster*4;i++){
 			if(strcmp(word, entries[i]->name) == 0){
 				strncpy(current_directory->name, word, sizeof(word));
+				strcat(current_directory_path, word);
+				strcat(current_directory_path, "/");
 				current_directory->TypeVal = 2;
 				current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
 				current_directory->firstCluster = entries[i]->firstCluster;
@@ -436,6 +573,22 @@ int readdir2 (DIR2 handle, DIRENT2 *dentry)
 	return 0;
 }
 
+
+/*-----------------------------------------------------------------------------
+Função:	Fecha o diretório identificado pelo parâmetro "handle".
+
+Entra:	handle -> identificador do diretório que se deseja fechar (encerrar a operação).
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int closedir2 (DIR2 handle){
+	if(open_directories[handle]){
+		open_directories[handle] = NULL;
+		return 0;
+	}
+	return -1;
+}
 
 //IDENTIFY PRONTO!!!
 int identify2 (char *name, int size)
