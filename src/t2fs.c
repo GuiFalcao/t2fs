@@ -5,7 +5,7 @@
 
 #define system_init = 0;
 
-struct dir_struct {
+struct file_struct {
     char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 até 0x7A), case sensitive.             */
     DWORD   firstCluster;		/* Número do primeiro cluster de dados correspondente a essa entrada de diretório */
     int offset /*pra checar aonde está dentro do diretório*/
@@ -16,7 +16,9 @@ int *fat = NULL;
 t2fs_record *current_directory = NULL;
 char *current_directory_path;
 t2fs_record *current_file = NULL;
-dir_struct open_directories[10] = {0};
+file_struct open_directories[10] = {0};
+file_struct open_files[10] = {0};
+
 
 int DIRENT_PER_SECTOR;
 int debug = 1;
@@ -286,7 +288,7 @@ int rmdir2 (char *pathname)
 	{
 		found = 0;
 		//searchs for the given name in the directory records' array
-		for(i=0, i<SectorsPerCluster*4;i++){
+		for(i=0, i<DIRENT_PER_SECTOR;i++){
 			if(strcmp(word, entries[i]->name) == 0){
 				if(entries[i]->TypeVal != 2){
 					if(debug = 1){
@@ -307,7 +309,7 @@ int rmdir2 (char *pathname)
 		}
 	}
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
-	for(i=0, i<SectorsPerCluster*4;i++){
+	for(i=0, i<DIRENT_PER_SECTOR;i++){
 		if(!(entries[i]->TypeVal == 0x00)){
 			//SE ALGUMA ENTRADA NÃO FOR VAZIA E NAO FOR O . E O .. RETORNA ERRO
 			if((strcmp(entries[i]->name, ".")!=0)&&(strcmp(entries[i]->name, "..")!=0))
@@ -513,9 +515,9 @@ DIR2 opendir2 (char *pathname)
 
 	}
 
-	/*achou o diretório, instancia uma nova dir_struct, coloca na
+	/*achou o diretório, instancia uma nova file_struct, coloca na
 	primeira posição livre do array de open directories e retorna o índice*/
-	dir_struct open_dir;
+	file_struct open_dir;
 	strncpy(open_dir->name,current_directory->name, 56);
 	open_dir->firstCluster, current_directory->firstCluster;
 	open_dir->offset = 0;
@@ -601,3 +603,148 @@ int identify2 (char *name, int size)
     return 0;
   }
 }
+
+
+
+
+/*-----------------------------------------------------------------------------
+Função: Criar um novo arquivo.
+	O nome desse novo arquivo é aquele informado pelo parâmetro "filename".
+	O contador de posição do arquivo (current pointer) deve ser colocado na posição zero.
+	Caso já exista um arquivo ou diretório com o mesmo nome, a função deverá retornar um erro de criação.
+	A função deve retornar o identificador (handle) do arquivo.
+	Esse handle será usado em chamadas posteriores do sistema de arquivo para fins de manipulação do arquivo criado.
+
+Entra:	filename -> path absoluto para o arquivo a ser criado. Todo o "path" deve existir.
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna o handle do arquivo (número positivo).
+	Em caso de erro, deve ser retornado um valor negativo.
+-----------------------------------------------------------------------------*/
+FILE2 create2 (char *filename){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Apagar um arquivo do disco.
+	O nome do arquivo a ser apagado é aquele informado pelo parâmetro "filename".
+
+Entra:	filename -> nome do arquivo a ser apagado.
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int delete2 (char *filename){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Abre um arquivo existente no disco.
+	O nome desse novo arquivo é aquele informado pelo parâmetro "filename".
+	Ao abrir um arquivo, o contador de posição do arquivo (current pointer) deve ser colocado na posição zero.
+	A função deve retornar o identificador (handle) do arquivo.
+	Esse handle será usado em chamadas posteriores do sistema de arquivo para fins de manipulação do arquivo criado.
+	Todos os arquivos abertos por esta chamada são abertos em leitura e em escrita.
+	O ponto em que a leitura, ou escrita, será realizada é fornecido pelo valor current_pointer (ver função seek2).
+
+Entra:	filename -> nome do arquivo a ser apagado.
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna o handle do arquivo (número positivo)
+	Em caso de erro, deve ser retornado um valor negativo
+-----------------------------------------------------------------------------*/
+FILE2 open2 (char *filename){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Fecha o arquivo identificado pelo parâmetro "handle".
+
+Entra:	handle -> identificador do arquivo a ser fechado
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int close2 (FILE2 handle){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Realiza a leitura de "size" bytes do arquivo identificado por "handle".
+	Os bytes lidos são colocados na área apontada por "buffer".
+	Após a leitura, o contador de posição (current pointer) deve ser ajustado para o byte seguinte ao último lido.
+
+Entra:	handle -> identificador do arquivo a ser lido
+	buffer -> buffer onde colocar os bytes lidos do arquivo
+	size -> número de bytes a serem lidos
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna o número de bytes lidos.
+	Se o valor retornado for menor do que "size", então o contador de posição atingiu o final do arquivo.
+	Em caso de erro, será retornado um valor negativo.
+-----------------------------------------------------------------------------*/
+int read2 (FILE2 handle, char *buffer, int size){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Realiza a escrita de "size" bytes no arquivo identificado por "handle".
+	Os bytes a serem escritos estão na área apontada por "buffer".
+	Após a escrita, o contador de posição (current pointer) deve ser ajustado para o byte seguinte ao último escrito.
+
+Entra:	handle -> identificador do arquivo a ser escrito
+	buffer -> buffer de onde pegar os bytes a serem escritos no arquivo
+	size -> número de bytes a serem escritos
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna o número de bytes efetivamente escritos.
+	Em caso de erro, será retornado um valor negativo.
+-----------------------------------------------------------------------------*/
+int write2 (FILE2 handle, char *buffer, int size){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Função usada para truncar um arquivo.
+	Remove do arquivo todos os bytes a partir da posição atual do contador de posição (CP)
+	Todos os bytes a partir da posição CP (inclusive) serão removidos do arquivo.
+	Após a operação, o arquivo deverá contar com CP bytes e o ponteiro estará no final do arquivo
+
+Entra:	handle -> identificador do arquivo a ser truncado
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int truncate2 (FILE2 handle){
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+Função:	Reposiciona o contador de posições (current pointer) do arquivo identificado por "handle".
+	A nova posição é determinada pelo parâmetro "offset".
+	O parâmetro "offset" corresponde ao deslocamento, em bytes, contados a partir do início do arquivo.
+	Se o valor de "offset" for "-1", o current_pointer deverá ser posicionado no byte seguinte ao final do arquivo,
+		Isso é útil para permitir que novos dados sejam adicionados no final de um arquivo já existente.
+
+Entra:	handle -> identificador do arquivo a ser escrito
+	offset -> deslocamento, em bytes, onde posicionar o "current pointer".
+
+Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
+	Em caso de erro, será retornado um valor diferente de zero.
+-----------------------------------------------------------------------------*/
+int seek2 (FILE2 handle, unsigned int offset){
+
+	return 0;
+}
+
+
