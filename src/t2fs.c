@@ -15,6 +15,7 @@ t2fs_record *root = NULL;
 int *fat = NULL;
 t2fs_record *current_directory = NULL;
 char *current_directory_path;
+int clusterOfFatherDirectory;
 t2fs_record *current_file = NULL;
 file_struct open_directories[10] = {0};
 file_struct open_files[10] = {0};
@@ -22,6 +23,10 @@ file_struct open_files[10] = {0};
 
 int DIRENT_PER_SECTOR;
 int debug = 1;
+
+
+
+/*FUNÇÕES DE AUXILIARES:*/
 
 
 
@@ -114,6 +119,112 @@ int findsFreeCluster(int type){
 	}
 	return -1;
 }
+
+
+/*função que procura o diretório buscado pelo pathname, podendo este ser absoluto ou relativo.
+  Recebe um pathname a ser procurado, e quatro variaveis auxiliares para serem colocados os registros.
+  Ao fim, estarão as entradas de diretório do dir procurado em entries
+  O cluster do diretório pai ao do procurado em temp_cluster_father_dir
+  A entrada de diretório relativa ao dir procurado em temp_current_dir
+*/
+void findPath(char* pathname, int temp_cluster_father_dir, t2fs_record* temp_current_dir, t2fs_record* entries)
+{
+	int found = 0;
+	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
+
+	//se for caminho relativo
+	if(pathname[0] != "/")
+	{
+		if(pathname[0] == "."){
+			if(pathname[1] == "."){
+				//procura no diretório pai
+				strcat(temp_current_dir_path, "../");
+				temp_current_dir->firstCluster = clusterOfFatherDirectory;
+			}
+			//é no "."
+			if(current_directory == NULL){
+				printf("nao ha diretorio aberto\n");
+				return -1;
+			}
+			strcat(temp_current_dir_path, "./");
+			temp_current_dir->firstCluster = current_directory->firstCluster;
+		}
+
+		read_cluster(temp_current_dir->firstCluster, cluster_buffer);
+	}
+	//se for absoluto
+	else{
+		read_cluster(root->firstCluster,cluster_buffer);
+	}
+
+	//Entries tem agora as entradas de diretório do primeiro diretório referenciado, /, . ou ..
+	entries  = (t2fs_record*) cluster_buffer;
+	
+	//procura nas entradas o diretório pai, seta o cluster do diretório pai pra ele
+	for(i=0;i<DIRENT_PER_SECTOR;i++){
+		if(strncmp(entries[i], "..")==0){
+			temp_cluster_father_dir = entries[i]->firstCluster;
+		}
+	}
+
+	/*TEMOS AGORA:
+	1) Array entries tem as entradas de diretório do primeiro diretório procurado
+	2) temp_cluster_father_dir tem o cluster do diretório pai
+	3) temp_current_dir tem a entrada de diretório do primeiro diretório achado, /, . ou ..*/
+
+	char* word;
+	//word is the current directory name being looked for
+	for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
+	{
+		found = 0;
+		//searchs for the given name in the directory records' array
+		for(i=0, i<DIRENT_PER_SECTOR;i++){
+			//se achar o nome do diretório com o nome da pasta
+			if(strcmp(word, entries[i]->name) == 0){
+				if(entries[i]->TypeVal != 2){
+					if(debug = 1){
+						printf("nao é um diretório\n");
+					}
+					return -1;
+				}
+				//if found the directory, reads its cluster
+				//associa o cluster do pai a este cluster, já que vai trocar de diretório
+				int j = 0;
+				for(j=0;j<DIRENT_PER_SECTOR;j++){
+					if(strncmp(entries[i], ".")==0){
+						temp_cluster_father_dir = entries[j]->firstCluster;
+					}
+				}
+				//atualiza o path
+				strcat(temp_current_dir_path, word);
+				//le o cluster; agora entries tem as informações do novo cluster
+				read_cluster(entries[i]->firstCluster, cluster_buffer);
+				entries = (t2fs_record*) cluster_buffer;
+				found = 1;
+			}
+		}
+		if(found == 0){
+			if(debug == 1){
+				printf("nao achou o nome da pasta\n");
+			}
+			//NAO ACHOU O NOME DA PASTA RETORNA ERRO
+			return -1;
+		}
+	}
+
+	/*entries tem o conteúdo do diretório procurado. temp_current_dir tem a entrada de diretório dele,
+	temp_current_dir_path tem o caminho dele, temp_cluster_father_dir tem o cluster do diretório pai*/
+	
+
+}
+
+
+
+/*FUNÇÕES DE DIRETÓRIO:*/
+
+
+
+
 /*-----------------------------------------------------------------------------
 Função:	Criar um novo diretório.
 	O caminho desse novo diretório é aquele informado pelo parâmetro "pathname".
@@ -181,14 +292,14 @@ int mkdir2 (char *pathname)
 			if(strtok(NULL, "/")==NULL)
 				{
 					//então acabou a palavra, é o diretório que tu precisa criar
-					for(i=0; i<SectorsPerCluster*4;i++){
+					for(i=0; i<DIRENT_PER_SECTOR;i++){
 						//percorre o array de entries pra achar uma entrada livre
 						if(entries[i]->TypeVal = 0x00){
 						//se o tipo de valor é 0, o arquivo não está sendo usado
 						//escreve o cluster atualizado do diretório pai com a nova entrada de diretório
 							entries[i]->TypeVal = 0x02;
 							strncpy(entries[i]->name, word, 55);
-							entries[i]->bytesFileSize = SectorsPerCluster*4;
+							entries[i]->bytesFileSize = DIRENT_PER_SECTOR;
 							int free_c = findsFreeCluster(2);
 							entries[i]->firstCluster = free_c;
 							write_cluster(clusterOfFatherDirectory, (char*) entries);
@@ -248,66 +359,20 @@ int rmdir2 (char *pathname)
 	t2fs_record* entries;
 
 	int i = 0;
-	int clusterOfFatherDirectory = -1;
+	int temp_cluster_father_dir = -1;
 	int found = 0;
 	int vazio = 0;
 
-	//se for caminho relativo
-	if(pathname[0] != "/")
-	{
-		if(current_directory == NULL){
-			printf("nao ha diretorio aberto\n");
-			return -1;
-		}
-		read_cluster(current_directory->firstCluster, cluster_buffer);
-		entries  = (t2fs_record*) cluster_buffer;
-		for(i=0;i<SectorsPerCluster*4;i++){
-			if(strncmp(entries[i], "..")==0){
-				clusterOfFatherDirectory = entries[i]->firstCluster;
-			}
-		}
-		if(clusterOfFatherDirectory == -1){
-			return -1;
-		}
-	}
-	else{
-	//se for absoluto
-		read_cluster(root->firstCluster,cluster_buffer);
-		clusterOfFatherDirectory = root->firstCluster;
-
-	}
+	t2fs_record* temp_current_dir;
 
 
 	if(strcmp(pathname,"/") == 0){
 		//NÃO É POSSÍVEL DELETAR O /
 		return -1;
 	}
-	char* word;
-	//word is the current directory name being looked for
-	for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
-	{
-		found = 0;
-		//searchs for the given name in the directory records' array
-		for(i=0, i<DIRENT_PER_SECTOR;i++){
-			if(strcmp(word, entries[i]->name) == 0){
-				if(entries[i]->TypeVal != 2){
-					if(debug = 1){
-						printf("nao é um diretório\n");
-					}
-					return -1;
-				}
-				//if found the directory, reads its cluster
-				clusterOfFatherDirectory = entries[i]->firstCluster;
-				read_cluster(entries[i]->firstCluster, cluster_buffer);
-				entries = (t2fs_record*) cluster_buffer;
-				found = 1;
-			}
-		}
-		if(found == 0){
-			//NAO ACHOU O NOME DA PASTA RETORNA ERRO
-			return -1;
-		}
-	}
+
+	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
+
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
 	for(i=0, i<DIRENT_PER_SECTOR;i++){
 		if(!(entries[i]->TypeVal == 0x00)){
@@ -347,64 +412,23 @@ int chdir2 (char *pathname){
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	//array to save all directory records from the cluster
 	t2fs_record* entries;
+	int temp_cluster_father_dir;
+	t2fs_record* temp_current_dir;
 
 	int i = 0;
 	int found = 0;
 
-	//se for caminho relativo
-	if(pathname[0] != "/")
-	{
-		if(current_directory == NULL){
-			printf("nao ha diretorio aberto\n");
-			return -1;
-		}
-		read_cluster(current_directory->firstCluster, cluster_buffer);
-	}
-	else{
-	//se for absoluto
-		read_cluster(root->firstCluster,cluster_buffer);
-	}
+	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
 
-	entries  = (t2fs_record*) cluster_buffer;
-	//entries agora tem as entradas de diretório do primeiro diretório do pathname: . se for relativo, / se for absoluto
-
-
-
-	char* word;
-	//word is the current directory name being looked for
-	for (word = strtok(path, "/"); word; word = strtok(NULL, "/"))
-	{
-		found = 0;
-		//searchs for the given name in the directory records' array
-		for(i=0, i<DIRENT_PER_SECTOR;i++){
-			if(strcmp(word, entries[i]->name) == 0){
-				if(entries[i]->TypeVal != 0x02){
-					if(debug = 1){
-						printf("nao é um diretório\n");
-					}
-					return -1;
-				}
-				//if found the directory, reads its cluster
-				read_cluster(entries[i]->firstCluster, cluster_buffer);
-				entries = (t2fs_record*) cluster_buffer;
-				found = 1;
-			}
-		}
-		if(found == 0){
-			if(debug = 1){
-				printf("nao achou o diretório\n");
-			}
-			//NAO ACHOU O NOME DA PASTA RETORNA ERRO
-			return -1;
-		}
-	}
 	
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
 	strncpy(current_directory_path, pathname);
-	current_directory->TypeVal = 0x02;
-	current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
-	strncpy(current_directory->name, ".");
-	current_directory->firstCluster = entries[0]->firstCluster;
+	//current_directory->TypeVal = 0x02;
+	//current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
+	//strncpy(current_directory->name, ".");
+	//current_directory->firstCluster = entries[0]->firstCluster;
+	current_directory = temp_current_dir;
+	clusterOfFatherDirectory = temp_cluster_father_dir;
 
 	return 0;
 }
@@ -465,59 +489,18 @@ DIR2 opendir2 (char *pathname)
 
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	t2fs_record* entries;
+	int temp_cluster_father_dir;
+	t2fs_record* temp_current_dir;
 	int i = 0;
 	int found = 0;
 
-	//se for caminho relativo
-	if(pathname[0] != "/")
-	{
-		if(current_directory == NULL){
-			printf("nao ha diretorio aberto\n");
-			return -1;
-		}
-		read_cluster(current_directory->firstCluster, cluster_buffer);
-	}
-	//se for absoluto
-	else{
-		read_cluster(root->firstCluster,cluster_buffer);
-	}
-	//array to save all direrctory records from the cluster
-	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
-	entries = (t2fs_record*) cluster_buffer;
+	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
 
-	current_directory_path = NULL;
-	char* word;
-	//word is the current directory name being looked for
-	for (word = strtok(pathname, "/"); word; word = strtok(NULL, "/"))
-	{
-		found = 0;
-		//searchs for the given name in the directory records' array
-		for(i=0, i<SectorsPerCluster*4;i++){
-			if(strcmp(word, entries[i]->name) == 0){
-				strncpy(current_directory->name, word, sizeof(word));
-				strcat(current_directory_path, word);
-				strcat(current_directory_path, "/");
-				current_directory->TypeVal = 2;
-				current_directory->bytesFileSize = 256*sb->SectorsPerCluster;
-				current_directory->firstCluster = entries[i]->firstCluster;
-				//if found the directory, reads its cluster
-
-				read_cluster(entries[i]->firstCluster, cluster_buffer);
-				entries = (t2fs_record*) cluster_buffer;
-				found = 1;
-
-			}
-		}
-		if(found == 0){
-			//NAO ACHOU O NOME DA PASTA
-			return -1;
-		}
-
-	}
 
 	/*achou o diretório, instancia uma nova file_struct, coloca na
 	primeira posição livre do array de open directories e retorna o índice*/
 	file_struct open_dir;
+	current_directory = temp_current_dir;
 	strncpy(open_dir->name,current_directory->name, 56);
 	open_dir->firstCluster, current_directory->firstCluster;
 	open_dir->offset = 0;
@@ -604,6 +587,13 @@ int identify2 (char *name, int size)
   }
 }
 
+
+
+
+
+
+
+/*FUNÇÕES DE ARQUIVO:*/
 
 
 
