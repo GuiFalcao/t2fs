@@ -1,4 +1,7 @@
 #include "./lib/libt2fs.a"
-int main(){
-	return opendir2("/");
+int main()
+{
+
+	opendir2("/");
+	readdir2("/");
 }
