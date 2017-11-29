@@ -6,7 +6,7 @@
 #define system_init = 0;
 
 typedef struct file_struct {
-    char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 até 0x7A), case sensitive.             */
+    char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 até 0x7A), case sensitive.*/
     DWORD   firstCluster;		/* Número do primeiro cluster de dados correspondente a essa entrada de diretório */
     int offset; /*pra checar aonde está dentro do diretório*/
 };
@@ -104,7 +104,7 @@ int write_cluster (int cluster, unsigned char *buffer)
 
 	return 0;
 }
-
+//pei
 
 //Função que percorre a FAT pra achar um cluster livre, ocupa o valor e retorna o indice
 int findsFreeCluster(int type){
