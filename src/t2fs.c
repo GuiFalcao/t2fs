@@ -235,6 +235,10 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 int mkdir2 (char *pathname)
 {
 
+	if(system == 0){
+		init_system();
+	}
+
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	struct t2fs_record* entries;
 	int i = 0;
@@ -348,6 +352,9 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 -----------------------------------------------------------------------------*/
 int rmdir2 (char *pathname)
 {
+	if(system == 0){
+		init_system();
+	}
 
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	//array to save all direrctory records from the cluster
@@ -407,6 +414,9 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int chdir2 (char *pathname){
+	if(system == 0){
+		init_system();
+	}
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	//array to save all directory records from the cluster
 	struct t2fs_record* entries;
@@ -447,6 +457,9 @@ Saida:
 	incluindo espaco insuficiente, conforme informado por "size".
 -----------------------------------------------------------------------------*/
 int getcwd2 (char *pathname, int size){
+	if(system == 0){
+		init_system();
+	}
 	if(current_directory == NULL){
 		if(debug = 1){
 			printf("nao esta em diretorio nenhum\n");
@@ -485,6 +498,9 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o identificador
 DIR2 opendir2 (char *pathname)
 {
 
+	if(system == 0){
+		init_system();
+	}
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 	struct	t2fs_record* entries;
 	int temp_cluster_father_dir;
@@ -566,6 +582,9 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int closedir2 (DIR2 handle){
+	if(system == 0){
+		init_system();
+	}
 	if(open_directories[handle].name !=  NULL){
 		char *string = NULL;
 		strcpy(open_directories[handle].name, string);
