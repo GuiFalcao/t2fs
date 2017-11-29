@@ -9,17 +9,17 @@ struct file_struct {
     char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 até 0x7A), case sensitive.             */
     DWORD   firstCluster;		/* Número do primeiro cluster de dados correspondente a essa entrada de diretório */
     int offset /*pra checar aonde está dentro do diretório*/
-};
+}
 
-t2fs_record *root = NULL;
+struct t2fs_record *root = NULL;
 int *fat = NULL;
-t2fs_record *current_directory = NULL;
+struct t2fs_record *current_directory = NULL;
 char *current_directory_path;
 int clusterOfFatherDirectory;
-t2fs_record *current_file = NULL;
-file_struct open_directories[10] = {0};
-file_struct open_files[10] = {0};
-
+struct t2fs_record *current_file = NULL;
+struct file_struct open_directories[10] = {0};
+struct file_struct open_files[10] = {0};
+struct t2fs_superbloco sb;
 
 int DIRENT_PER_SECTOR;
 int debug = 1;
@@ -30,7 +30,7 @@ int debug = 1;
 
 
 
-void superbloco_inst(struct t2fs_superbloco *sb)
+void superbloco_inst()
 {
 
 	char *buffer;
@@ -46,7 +46,7 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 	strncpy(sb->SectorsPerCluster, buffer+16, 4);
 	strncpy(sb->pFATSectorStart, buffer+20, 4);
 	strncpy(sb->RootDirCluster, buffer+24, 4);
-	strncpy(sb->DataSectorCluster, buffer+28, 4);
+	strncpy(sb->DataSectorStart, buffer+28, 4);
 	DIRENT_PER_SECTOR = sb->SectorsPerCluster*4;
 
 	return;
@@ -55,9 +55,7 @@ void superbloco_inst(struct t2fs_superbloco *sb)
 
 void fat_init(){
 	int i = 0, y = 0, total;
-	int fat[];
-	char *buffer;
-
+	
 	int numberOfSectors = (int *) sb->DataSectorStart - (int *) sb->pFATSectorStart;
 	//for(i=0;i<numberOfSectors;i++){
 	//	read_sector(pFATSectorStart+i, fat+i*256);
