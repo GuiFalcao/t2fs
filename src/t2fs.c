@@ -253,7 +253,7 @@ int rmdir2 (char *pathname)
 	int vazio = 0;
 
 	//se for caminho relativo
-	if(pathname[0] == ".")
+	if(pathname[0] != "/")
 	{
 		if(current_directory == NULL){
 			printf("nao ha diretorio aberto\n");
@@ -352,7 +352,7 @@ int chdir2 (char *pathname){
 	int found = 0;
 
 	//se for caminho relativo
-	if(pathname[0] == ".")
+	if(pathname[0] != "/")
 	{
 		if(current_directory == NULL){
 			printf("nao ha diretorio aberto\n");
@@ -469,7 +469,7 @@ DIR2 opendir2 (char *pathname)
 	int found = 0;
 
 	//se for caminho relativo
-	if(pathname[0] == ".")
+	if(pathname[0] != "/")
 	{
 		if(current_directory == NULL){
 			printf("nao ha diretorio aberto\n");
