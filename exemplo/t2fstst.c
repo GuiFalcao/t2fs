@@ -680,11 +680,23 @@ void cmdSeek(void) {
 }
 
 void cmdChDir(void) {
-
+	
 }
 
 void cmdGetCwd(void) {
+	FILE2 handle;
+	char *token = strtok(NULL," \t");
+	if (token==NULL) {
+		printf ("Missing parameter\n");
+		return;
+	    }
+    	if (sscanf(token, "%d", &handle)==0) {
+        	printf ("Invalid parameter\n");
+	        return;
+	    }
 
+
+	getcwd2(token, 55);
 }
 
 
