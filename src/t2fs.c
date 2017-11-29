@@ -6,9 +6,9 @@
 #define system_init = 0;
 
 typedef struct file_struct {
-    char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 até 0x7A), case sensitive.*/
-    DWORD   firstCluster;		/* Número do primeiro cluster de dados correspondente a essa entrada de diretório */
-    int offset; /*pra checar aonde está dentro do diretório*/
+    char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 ate 0x7A), case sensitive.*/
+    DWORD   firstCluster;		/* Numero do primeiro cluster de dados correspondente a essa entrada de diretorio */
+    int offset; /*pra checar aonde esta dentro do diretorio*/
 };
 
 struct t2fs_record *root = NULL;
@@ -55,13 +55,13 @@ void superbloco_inst()
 
 void fat_init(){
 	int i = 0, y = 0, total;
-	
+
 	int numberOfSectors = (int *) sb->DataSectorStart - (int *) sb->pFATSectorStart;
 	//for(i=0;i<numberOfSectors;i++){
 	//	read_sector(pFATSectorStart+i, fat+i*256);
 	//}
 
-	//total é a quantidade de bytes que tem na fat
+	//total e a quantidade de bytes que tem na fat
 	total = numberOfSectors * SECTOR_SIZE;
 	for(i=0; i < total; i++){
 	   	fat[i] = 0x00000000;
@@ -106,7 +106,7 @@ int write_cluster (int cluster, unsigned char *buffer)
 }
 //pei
 
-//Função que percorre a FAT pra achar um cluster livre, ocupa o valor e retorna o indice
+//Funcao que percorre a FAT pra achar um cluster livre, ocupa o valor e retorna o indice
 int findsFreeCluster(int type){
 	int i=0;
 	for(i=0; i<sizeof(fat); i++){
@@ -119,11 +119,11 @@ int findsFreeCluster(int type){
 }
 
 
-/*função que procura o diretório buscado pelo pathname, podendo este ser absoluto ou relativo.
+/*funcao que procura o diretorio buscado pelo pathname, podendo este ser absoluto ou relativo.
   Recebe um pathname a ser procurado, e quatro variaveis auxiliares para serem colocados os registros.
-  Ao fim, estarão as entradas de diretório do dir procurado em entries
-  O cluster do diretório pai ao do procurado em temp_cluster_father_dir
-  A entrada de diretório relativa ao dir procurado em temp_current_dir
+  Ao fim, estarao as entradas de diretorio do dir procurado em entries
+  O cluster do diretorio pai ao do procurado em temp_cluster_father_dir
+  A entrada de diretorio relativa ao dir procurado em temp_current_dir
 */
 void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* temp_current_dir, struct t2fs_record* entries)
 {
@@ -136,10 +136,10 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 	{
 		if(pathname[0] == "."){
 			if(pathname[1] == "."){
-				//procura no diretório pai
+				//procura no diretorio pai
 				temp_current_dir->firstCluster = clusterOfFatherDirectory;
 			}
-			//é no "."
+			//e no "."
 			if(current_directory == NULL){
 				printf("nao ha diretorio aberto\n");
 				return -1;
@@ -154,10 +154,10 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 		read_cluster(root->firstCluster,cluster_buffer);
 	}
 
-	//Entries tem agora as entradas de diretório do primeiro diretório referenciado, /, . ou ..
+	//Entries tem agora as entradas de diretorio do primeiro diretorio referenciado, /, . ou ..
 	entries  = (struct t2fs_record*) cluster_buffer;
-	
-	//procura nas entradas o diretório pai, seta o cluster do diretório pai pra ele
+
+	//procura nas entradas o diretorio pai, seta o cluster do diretorio pai pra ele
 	for(i=0;i<DIRENT_PER_SECTOR;i++){
 		if(strcmp(entries[i].name, "..")==0){
 			temp_cluster_father_dir = entries[i].firstCluster;
@@ -165,9 +165,9 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 	}
 
 	/*TEMOS AGORA:
-	1) Array entries tem as entradas de diretório do primeiro diretório procurado
-	2) temp_cluster_father_dir tem o cluster do diretório pai
-	3) temp_current_dir tem a entrada de diretório do primeiro diretório achado, /, . ou ..*/
+	1) Array entries tem as entradas de diretorio do primeiro diretorio procurado
+	2) temp_cluster_father_dir tem o cluster do diretorio pai
+	3) temp_current_dir tem a entrada de diretorio do primeiro diretorio achado, /, . ou ..*/
 
 	char* word;
 	//word is the current directory name being looked for
@@ -176,23 +176,23 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 		found = 0;
 		//searchs for the given name in the directory records' array
 		for(i=0; i<DIRENT_PER_SECTOR;i++){
-			//se achar o nome do diretório com o nome da pasta
+			//se achar o nome do diretorio com o nome da pasta
 			if(strcmp(word, entries[i].name) == 0){
 				if(entries[i].TypeVal != 2){
 					if(debug = 1){
-						printf("nao é um diretório\n");
+						printf("nao e um diretorio\n");
 					}
 					return -1;
 				}
 				//if found the directory, reads its cluster
-				//associa o cluster do pai a este cluster, já que vai trocar de diretório
+				//associa o cluster do pai a este cluster, ja que vai trocar de diretorio
 				int j = 0;
 				for(j=0;j<DIRENT_PER_SECTOR;j++){
 					if(strcmp(entries[i].name, ".")==0){
 						temp_cluster_father_dir = entries[j].firstCluster;
 					}
 				}
-				//le o cluster; agora entries tem as informações do novo cluster
+				//le o cluster; agora entries tem as informacoes do novo cluster
 				read_cluster(entries[i].firstCluster, cluster_buffer);
 				entries = (struct t2fs_record*) cluster_buffer;
 				found = 1;
@@ -207,9 +207,9 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 		}
 	}
 
-	/*entries tem o conteúdo do diretório procurado. temp_current_dir tem a entrada de diretório dele,
-	temp_current_dir_path tem o caminho dele, temp_cluster_father_dir tem o cluster do diretório pai*/
-	
+	/*entries tem o conteudo do diretorio procurado. temp_current_dir tem a entrada de diretorio dele,
+	temp_current_dir_path tem o caminho dele, temp_cluster_father_dir tem o cluster do diretorio pai*/
+
 
 }
 
@@ -221,16 +221,16 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 
 
 /*-----------------------------------------------------------------------------
-Função:	Criar um novo diretório.
-	O caminho desse novo diretório é aquele informado pelo parâmetro "pathname".
+Funcao:	Criar um novo diretorio.
+	O caminho desse novo diretorio eh aquele informado pelo parametro "pathname".
 		O caminho pode ser ser absoluto ou relativo.
-	São considerados erros de criação quaisquer situações em que o diretório não possa ser criado.
-		Isso inclui a existência de um arquivo ou diretório com o mesmo "pathname".
+	Sao considerados erros de criacao quaisquer situacoes em que o diretorio nao possa ser criado.
+		Isso inclui a existencia de um arquivo ou diretorio com o mesmo "pathname".
 
-Entra:	pathname -> caminho do diretório a ser criado
+Entra:	pathname -> caminho do diretorio a ser criado
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int mkdir2 (char *pathname)
 {
@@ -258,7 +258,7 @@ int mkdir2 (char *pathname)
 		clusterOfFatherDirectory = root->firstCluster;
 	}
 	//array to save all direrctory records from the cluster
-	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIRETÓRIO DO ROOT
+	//AQUI O ARRAY ENTRIES TEM AS ENTRADAS DE DIREToRIO DO ROOT
 	entries = (struct t2fs_record*) cluster_buffer;
 
 	char* word;
@@ -271,7 +271,7 @@ int mkdir2 (char *pathname)
 			if(strcmp(word, entries[i].name) == 0){
 				if(entries[i].TypeVal != 2){
 					if(debug = 1){
-						printf("nao é um diretório\n");
+						printf("nao eh um diretorio\n");
 					}
 					return -1;
 				}
@@ -283,15 +283,15 @@ int mkdir2 (char *pathname)
 			}
 		}
 		if(found == 0){
-			//NAO ACHOU O NOME DA PASTA -> ou ela não existe, ou é a que precisa ser criada
+			//NAO ACHOU O NOME DA PASTA -> ou ela nao existe, ou eh a que precisa ser criada
 			if(strtok(NULL, "/")==NULL)
 				{
-					//então acabou a palavra, é o diretório que tu precisa criar
+					//entao acabou a palavra, eh o diretorio que tu precisa criar
 					for(i=0; i<DIRENT_PER_SECTOR;i++){
 						//percorre o array de entries pra achar uma entrada livre
 						if(entries[i].TypeVal = 0x00){
-						//se o tipo de valor é 0, o arquivo não está sendo usado
-						//escreve o cluster atualizado do diretório pai com a nova entrada de diretório
+						//se o tipo de valor e 0, o arquivo nao esta sendo usado
+						//escreve o cluster atualizado do diretorio pai com a nova entrada de diretorio
 							entries[i].TypeVal = 0x02;
 							strncpy(entries[i].name, word, 55);
 							entries[i].bytesFileSize = DIRENT_PER_SECTOR;
@@ -299,7 +299,7 @@ int mkdir2 (char *pathname)
 							entries[i].firstCluster = free_c;
 							write_cluster(clusterOfFatherDirectory, (char*) entries);
 
-							//aloca um buffer pra escrever as entradas do novo diretório
+							//aloca um buffer pra escrever as entradas do novo diretorio
 							struct t2fs_record* new_cluster_buffer = (struct t2fs_record *)malloc(256*sb->SectorsPerCluster);
 
 							//escreve a entrada .
@@ -320,11 +320,11 @@ int mkdir2 (char *pathname)
 							return 0;
 						}
 					}
-					//não achou entrada livre, retorna erro
+					//nao achou entrada livre, retorna erro
 					return -1;
 				}
 			else{
-				//o caminho dado não existe, retorna erro
+				//o caminho dado nao existe, retorna erro
 				return -1;
 			}
 		}
@@ -332,19 +332,19 @@ int mkdir2 (char *pathname)
 }
 
 /*-----------------------------------------------------------------------------
-Função:	Apagar um subdiretório do disco.
-	O caminho do diretório a ser apagado é aquele informado pelo parâmetro "pathname".
-	São considerados erros quaisquer situações que impeçam a operação.
+Funcao:	Apagar um subdiretorio do disco.
+	O caminho do diretorio a ser apagado eh aquele informado pelo parametro "pathname".
+	Sao considerados erros quaisquer situacoes que impecam a operacao.
 		Isso inclui:
-			(a) o diretório a ser removido não está vazio;
-			(b) "pathname" não existente;
-			(c) algum dos componentes do "pathname" não existe (caminho inválido);
-			(d) o "pathname" indicado não é um arquivo;
+			(a) o diretorio a ser removido nao esta vazio;
+			(b) "pathname" nao existente;
+			(c) algum dos componentes do "pathname" nao existe (caminho invalido);
+			(d) o "pathname" indicado nao eh um arquivo;
 
-Entra:	pathname -> caminho do diretório a ser apagado
+Entra:	pathname -> caminho do diretorio a ser apagado
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int rmdir2 (char *pathname)
 {
@@ -362,7 +362,7 @@ int rmdir2 (char *pathname)
 
 
 	if(strcmp(pathname,"/") == 0){
-		//NÃO É POSSÍVEL DELETAR O /
+		//NAO EH POSSiVEL DELETAR O /
 		return -1;
 	}
 
@@ -371,14 +371,14 @@ int rmdir2 (char *pathname)
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
 	for(i=0; i<DIRENT_PER_SECTOR;i++){
 		if(!(entries[i].TypeVal == 0x00)){
-			//SE ALGUMA ENTRADA NÃO FOR VAZIA E NAO FOR O . E O .. RETORNA ERRO
+			//SE ALGUMA ENTRADA NAO FOR VAZIA E NAO FOR O . E O .. RETORNA ERRO
 			if((strcmp(entries[i].name, ".")!=0)&&(strcmp(entries[i].name, "..")!=0)){
 				return -1;
 			}
 		}
 	}
 	//ACHOU O DIRETORIO E ESTA VAZIO
-	//zera o cluster do diretório
+	//zera o cluster do diretorio
 	cluster_buffer = NULL;
 	write_cluster(entries[i].firstCluster, cluster_buffer);
 
@@ -393,18 +393,18 @@ int rmdir2 (char *pathname)
 
 
 /*-----------------------------------------------------------------------------
-Função:	Altera o current path
-	O novo caminho do diretório a ser usado como current path é aquele informado pelo parâmetro "pathname".
-	São considerados erros quaisquer situações que impeçam a operação.
+Funcao:	Altera o current path
+	O novo caminho do diretorio a ser usado como current path eh aquele informado pelo parametro "pathname".
+	Sao considerados erros quaisquer situacoes que impecam a operacao.
 		Isso inclui:
-			(a) "pathname" não existente;
-			(b) algum dos componentes do "pathname" não existe (caminho inválido);
-			(c) o "pathname" indicado não é um diretório;
+			(a) "pathname" nao existente;
+			(b) algum dos componentes do "pathname" nao existe (caminho invalido);
+			(c) o "pathname" indicado nao e um diretorio;
 
-Entra:	pathname -> caminho do diretório a ser criado
+Entra:	pathname -> caminho do diretorio a ser criado
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int chdir2 (char *pathname){
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
@@ -418,7 +418,7 @@ int chdir2 (char *pathname){
 
 	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
 
-	
+
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
 	strcpy(current_directory_path, pathname);
 	//current_directory->TypeVal = 0x02;
@@ -433,23 +433,23 @@ int chdir2 (char *pathname){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Função que informa o diretório atual de trabalho.
-	O T2FS deve copiar o pathname do diretório de trabalho, incluindo o ‘\0’ do final do string, para o buffer indicado por "pathname".
-	Essa cópia não pode exceder o tamanho do buffer, informado pelo parâmetro "size".
+Funcao:	Funcao que informa o diretorio atual de trabalho.
+	O T2FS deve copiar o pathname do diretorio de trabalho, incluindo o ‘\0’ do final do string, para o buffer indicado por "pathname".
+	Essa copia nao pode exceder o tamanho do buffer, informado pelo parametro "size".
 
 Entra:	pathname -> ponteiro para buffer onde copiar o pathname
-	size -> tamanho do buffer "pathname" (número máximo de bytes a serem copiados).
+	size -> tamanho do buffer "pathname" (numero maximo de bytes a serem copiados).
 
-Saída:
-	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Caso ocorra algum erro, a função retorna um valor diferente de zero.
-	São considerados erros quaisquer situações que impeçam a cópia do pathname do diretório de trabalho para "pathname",
-	incluindo espaço insuficiente, conforme informado por "size".
+Saida:
+	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Caso ocorra algum erro, a funcao retorna um valor diferente de zero.
+	Sao considerados erros quaisquer situacoes que impecam a copia do pathname do diretorio de trabalho para "pathname",
+	incluindo espaco insuficiente, conforme informado por "size".
 -----------------------------------------------------------------------------*/
 int getcwd2 (char *pathname, int size){
 	if(current_directory == NULL){
 		if(debug = 1){
-			printf("nao está em diretorio nenhum\n");
+			printf("nao esta em diretorio nenhum\n");
 		}
 		return -1;
 	}
@@ -470,17 +470,17 @@ int getcwd2 (char *pathname, int size){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Abre um diretório existente no disco.
-	O caminho desse diretório é aquele informado pelo parâmetro "pathname".
-	Se a operação foi realizada com sucesso, a função:
-		(a) deve retornar o identificador (handle) do diretório
-		(b) deve posicionar o ponteiro de entradas (current entry) na primeira posição válida do diretório "pathname".
-	O handle retornado será usado em chamadas posteriores do sistema de arquivo para fins de manipulação do diretório.
+Funcao:	Abre um diretorio existente no disco.
+	O caminho desse diretorio e aquele informado pelo parametro "pathname".
+	Se a operacao foi realizada com sucesso, a funcao:
+		(a) deve retornar o identificador (handle) do diretorio
+		(b) deve posicionar o ponteiro de entradas (current entry) na primeira posicao valida do diretorio "pathname".
+	O handle retornado sera usado em chamadas posteriores do sistema de arquivo para fins de manipulacao do diretorio.
 
-Entra:	pathname -> caminho do diretório a ser aberto
+Entra:	pathname -> caminho do diretorio a ser aberto
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna o identificador do diretório (handle).
-	Em caso de erro, será retornado um valor negativo.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o identificador do diretorio (handle).
+	Em caso de erro, sera retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 DIR2 opendir2 (char *pathname)
 {
@@ -495,8 +495,8 @@ DIR2 opendir2 (char *pathname)
 	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
 
 
-	/*achou o diretório, instancia uma nova file_struct, coloca na
-	primeira posição livre do array de open directories e retorna o índice*/
+	/*achou o diretorio, instancia uma nova file_struct, coloca na
+	primeira posicao livre do array de open directories e retorna o indice*/
 	struct file_struct open_dir;
 	current_directory = temp_current_dir;
 	strncpy(open_dir.name,current_directory->name, 56);
@@ -515,21 +515,21 @@ DIR2 opendir2 (char *pathname)
 
 
 /*-----------------------------------------------------------------------------
-Função:	Realiza a leitura das entradas do diretório identificado por "handle".
-	A cada chamada da função é lida a entrada seguinte do diretório representado pelo identificador "handle".
-	Algumas das informações dessas entradas devem ser colocadas no parâmetro "dentry".
-	Após realizada a leitura de uma entrada, o ponteiro de entradas (current entry) é ajustado para a próxima entrada válida
-	São considerados erros:
-		(a) término das entradas válidas do diretório identificado por "handle".
-		(b) qualquer situação que impeça a realização da operação
+Funcao:	Realiza a leitura das entradas do diretorio identificado por "handle".
+	A cada chamada da funcao e lida a entrada seguinte do diretorio representado pelo identificador "handle".
+	Algumas das informacoes dessas entradas devem ser colocadas no parametro "dentry".
+	Apos realizada a leitura de uma entrada, o ponteiro de entradas (current entry) e ajustado para a proxima entrada valida
+	Sao considerados erros:
+		(a) termino das entradas validas do diretorio identificado por "handle".
+		(b) qualquer situacao que impeca a realizacao da operacao
 
-Entra:	handle -> identificador do diretório cujas entradas deseja-se ler.
-	dentry -> estrutura de dados onde a função coloca as informações da entrada lida.
+Entra:	handle -> identificador do diretorio cujas entradas deseja-se ler.
+	dentry -> estrutura de dados onde a funcao coloca as informacoes da entrada lida.
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor negativo
-		Se o diretório chegou ao final, retorna "-END_OF_DIR" (-1)
-		Outros erros, será retornado um outro valor negativo
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor negativo
+		Se o diretorio chegou ao final, retorna "-END_OF_DIR" (-1)
+		Outros erros, sera retornado um outro valor negativo
 -----------------------------------------------------------------------------*/
 int readdir2 (DIR2 handle, DIRENT2 *dentry)
 {
@@ -541,10 +541,10 @@ int readdir2 (DIR2 handle, DIRENT2 *dentry)
 
 	int offset = open_directories[handle].offset;
 	if(offset >= DIRENT_PER_SECTOR - 1){
-		//quer dizer que já chegou no final do diretório, pois já passou todas as entradas de diretório
+		//quer dizer que ja chegou no final do diretorio, pois ja passou todas as entradas de diretorio
 		return END_OF_DIR;
 	}
-	//vai ler o diretório apontado pelo handle
+	//vai ler o diretorio apontado pelo handle
 	read_cluster(open_directories[handle].firstCluster, cluster_buffer);
 
 	strncpy(dentry->fileType, cluster_buffer[offset*64], 1);
@@ -558,12 +558,12 @@ int readdir2 (DIR2 handle, DIRENT2 *dentry)
 
 
 /*-----------------------------------------------------------------------------
-Função:	Fecha o diretório identificado pelo parâmetro "handle".
+Funcao:	Fecha o diretorio identificado pelo parametro "handle".
 
-Entra:	handle -> identificador do diretório que se deseja fechar (encerrar a operação).
+Entra:	handle -> identificador do diretorio que se deseja fechar (encerrar a operacao).
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int closedir2 (DIR2 handle){
 	if(open_directories[handle].name !=  NULL){
@@ -597,16 +597,16 @@ int identify2 (char *name, int size)
 
 
 /*-----------------------------------------------------------------------------
-Função: Criar um novo arquivo.
-	O nome desse novo arquivo é aquele informado pelo parâmetro "filename".
-	O contador de posição do arquivo (current pointer) deve ser colocado na posição zero.
-	Caso já exista um arquivo ou diretório com o mesmo nome, a função deverá retornar um erro de criação.
-	A função deve retornar o identificador (handle) do arquivo.
-	Esse handle será usado em chamadas posteriores do sistema de arquivo para fins de manipulação do arquivo criado.
+Funcao: Criar um novo arquivo.
+	O nome desse novo arquivo e aquele informado pelo parametro "filename".
+	O contador de posicao do arquivo (current pointer) deve ser colocado na posicao zero.
+	Caso ja exista um arquivo ou diretorio com o mesmo nome, a funcao devera retornar um erro de criacao.
+	A funcao deve retornar o identificador (handle) do arquivo.
+	Esse handle sera usado em chamadas posteriores do sistema de arquivo para fins de manipulacao do arquivo criado.
 
 Entra:	filename -> path absoluto para o arquivo a ser criado. Todo o "path" deve existir.
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna o handle do arquivo (número positivo).
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o handle do arquivo (numero positivo).
 	Em caso de erro, deve ser retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 FILE2 create2 (char *filename){
@@ -616,13 +616,13 @@ FILE2 create2 (char *filename){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Apagar um arquivo do disco.
-	O nome do arquivo a ser apagado é aquele informado pelo parâmetro "filename".
+Funcao:	Apagar um arquivo do disco.
+	O nome do arquivo a ser apagado e aquele informado pelo parametro "filename".
 
 Entra:	filename -> nome do arquivo a ser apagado.
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int delete2 (char *filename){
 
@@ -631,17 +631,17 @@ int delete2 (char *filename){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Abre um arquivo existente no disco.
-	O nome desse novo arquivo é aquele informado pelo parâmetro "filename".
-	Ao abrir um arquivo, o contador de posição do arquivo (current pointer) deve ser colocado na posição zero.
-	A função deve retornar o identificador (handle) do arquivo.
-	Esse handle será usado em chamadas posteriores do sistema de arquivo para fins de manipulação do arquivo criado.
-	Todos os arquivos abertos por esta chamada são abertos em leitura e em escrita.
-	O ponto em que a leitura, ou escrita, será realizada é fornecido pelo valor current_pointer (ver função seek2).
+Funcao:	Abre um arquivo existente no disco.
+	O nome desse novo arquivo e aquele informado pelo parametro "filename".
+	Ao abrir um arquivo, o contador de posicao do arquivo (current pointer) deve ser colocado na posicao zero.
+	A funcao deve retornar o identificador (handle) do arquivo.
+	Esse handle sera usado em chamadas posteriores do sistema de arquivo para fins de manipulacao do arquivo criado.
+	Todos os arquivos abertos por esta chamada sao abertos em leitura e em escrita.
+	O ponto em que a leitura, ou escrita, sera realizada e fornecido pelo valor current_pointer (ver funcao seek2).
 
 Entra:	filename -> nome do arquivo a ser apagado.
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna o handle do arquivo (número positivo)
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o handle do arquivo (numero positivo)
 	Em caso de erro, deve ser retornado um valor negativo
 -----------------------------------------------------------------------------*/
 FILE2 open2 (char *filename){
@@ -651,12 +651,12 @@ FILE2 open2 (char *filename){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Fecha o arquivo identificado pelo parâmetro "handle".
+Funcao:	Fecha o arquivo identificado pelo parametro "handle".
 
 Entra:	handle -> identificador do arquivo a ser fechado
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int close2 (FILE2 handle){
 
@@ -665,17 +665,17 @@ int close2 (FILE2 handle){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Realiza a leitura de "size" bytes do arquivo identificado por "handle".
-	Os bytes lidos são colocados na área apontada por "buffer".
-	Após a leitura, o contador de posição (current pointer) deve ser ajustado para o byte seguinte ao último lido.
+Funcao:	Realiza a leitura de "size" bytes do arquivo identificado por "handle".
+	Os bytes lidos sao colocados na area apontada por "buffer".
+	Apos a leitura, o contador de posicao (current pointer) deve ser ajustado para o byte seguinte ao ultimo lido.
 
 Entra:	handle -> identificador do arquivo a ser lido
 	buffer -> buffer onde colocar os bytes lidos do arquivo
-	size -> número de bytes a serem lidos
+	size -> numero de bytes a serem lidos
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna o número de bytes lidos.
-	Se o valor retornado for menor do que "size", então o contador de posição atingiu o final do arquivo.
-	Em caso de erro, será retornado um valor negativo.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o numero de bytes lidos.
+	Se o valor retornado for menor do que "size", entao o contador de posicao atingiu o final do arquivo.
+	Em caso de erro, sera retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 int read2 (FILE2 handle, char *buffer, int size){
 
@@ -684,16 +684,16 @@ int read2 (FILE2 handle, char *buffer, int size){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Realiza a escrita de "size" bytes no arquivo identificado por "handle".
-	Os bytes a serem escritos estão na área apontada por "buffer".
-	Após a escrita, o contador de posição (current pointer) deve ser ajustado para o byte seguinte ao último escrito.
+Funcao:	Realiza a escrita de "size" bytes no arquivo identificado por "handle".
+	Os bytes a serem escritos estao na area apontada por "buffer".
+	Apos a escrita, o contador de posicao (current pointer) deve ser ajustado para o byte seguinte ao ultimo escrito.
 
 Entra:	handle -> identificador do arquivo a ser escrito
 	buffer -> buffer de onde pegar os bytes a serem escritos no arquivo
-	size -> número de bytes a serem escritos
+	size -> numero de bytes a serem escritos
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna o número de bytes efetivamente escritos.
-	Em caso de erro, será retornado um valor negativo.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o numero de bytes efetivamente escritos.
+	Em caso de erro, sera retornado um valor negativo.
 -----------------------------------------------------------------------------*/
 int write2 (FILE2 handle, char *buffer, int size){
 
@@ -702,15 +702,15 @@ int write2 (FILE2 handle, char *buffer, int size){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Função usada para truncar um arquivo.
-	Remove do arquivo todos os bytes a partir da posição atual do contador de posição (CP)
-	Todos os bytes a partir da posição CP (inclusive) serão removidos do arquivo.
-	Após a operação, o arquivo deverá contar com CP bytes e o ponteiro estará no final do arquivo
+Funcao:	Funcao usada para truncar um arquivo.
+	Remove do arquivo todos os bytes a partir da posicao atual do contador de posicao (CP)
+	Todos os bytes a partir da posicao CP (inclusive) serao removidos do arquivo.
+	Apos a operacao, o arquivo devera contar com CP bytes e o ponteiro estara no final do arquivo
 
 Entra:	handle -> identificador do arquivo a ser truncado
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int truncate2 (FILE2 handle){
 
@@ -719,21 +719,19 @@ int truncate2 (FILE2 handle){
 
 
 /*-----------------------------------------------------------------------------
-Função:	Reposiciona o contador de posições (current pointer) do arquivo identificado por "handle".
-	A nova posição é determinada pelo parâmetro "offset".
-	O parâmetro "offset" corresponde ao deslocamento, em bytes, contados a partir do início do arquivo.
-	Se o valor de "offset" for "-1", o current_pointer deverá ser posicionado no byte seguinte ao final do arquivo,
-		Isso é útil para permitir que novos dados sejam adicionados no final de um arquivo já existente.
+Funcao:	Reposiciona o contador de posicoes (current pointer) do arquivo identificado por "handle".
+	A nova posicao e determinada pelo parametro "offset".
+	O parametro "offset" corresponde ao deslocamento, em bytes, contados a partir do inicio do arquivo.
+	Se o valor de "offset" for "-1", o current_pointer devera ser posicionado no byte seguinte ao final do arquivo,
+		Isso e util para permitir que novos dados sejam adicionados no final de um arquivo ja existente.
 
 Entra:	handle -> identificador do arquivo a ser escrito
 	offset -> deslocamento, em bytes, onde posicionar o "current pointer".
 
-Saída:	Se a operação foi realizada com sucesso, a função retorna "0" (zero).
-	Em caso de erro, será retornado um valor diferente de zero.
+Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
+	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int seek2 (FILE2 handle, unsigned int offset){
 
 	return 0;
 }
-
-
