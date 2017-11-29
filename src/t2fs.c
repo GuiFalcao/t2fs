@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../include/apidisk.h"
 #include "../include/t2fs.h"
-
-#define system_init = 0;
 
 typedef struct file_struct {
     char    name[MAX_FILE_NAME_SIZE]; 	/* Nome do arquivo. : string com caracteres ASCII (0x21 ate 0x7A), case sensitive.*/
@@ -17,13 +16,13 @@ struct t2fs_record *current_directory = NULL;
 char *current_directory_path;
 int clusterOfFatherDirectory;
 struct t2fs_record *current_file = NULL;
-struct file_struct open_directories[10] = {0};
-struct file_struct open_files[10] = {0};
+struct file_struct open_directories[10] = {{}};
+struct file_struct open_files[10] = {{}};
 struct t2fs_superbloco *sb;
 
 int DIRENT_PER_SECTOR;
 int debug = 1;
-int system = 0;
+int system_initialized = 0;
 
 
 /*FUNCOES AUXILIARES*/
@@ -82,7 +81,7 @@ void init_system(){
 	superbloco_inst();
 	fat_init();
 	root_init();
-	system = 1;
+	system_initialized = 1;
 }
 
 int read_cluster (int cluster, unsigned char *buffer)
@@ -125,24 +124,24 @@ int findsFreeCluster(int type){
   O cluster do diretorio pai ao do procurado em temp_cluster_father_dir
   A entrada de diretorio relativa ao dir procurado em temp_current_dir
 */
-void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* temp_current_dir, struct t2fs_record* entries)
+int findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* temp_current_dir, struct t2fs_record* entries)
 {
 	int found = 0;
 	int i = 0;
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
 
 	//se for caminho relativo
-	if(pathname[0] != "/")
+	if(strcmp(pathname[0],  "/") != 0)
 	{
-		if(pathname[0] == "."){
-			if(pathname[1] == "."){
+		if(pathname[0] == '.'){
+			if(pathname[1] == '.'){
 				//procura no diretorio pai
 				temp_current_dir->firstCluster = clusterOfFatherDirectory;
 			}
 			//e no "."
 			if(current_directory == NULL){
 				printf("nao ha diretorio aberto\n");
-				return -1;
+				return;
 			}
 			temp_current_dir->firstCluster = current_directory->firstCluster;
 		}
@@ -179,10 +178,10 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 			//se achar o nome do diretorio com o nome da pasta
 			if(strcmp(word, entries[i].name) == 0){
 				if(entries[i].TypeVal != 2){
-					if(debug = 1){
+					if(debug == 1){
 						printf("nao e um diretorio\n");
 					}
-					return -1;
+					return;
 				}
 				//if found the directory, reads its cluster
 				//associa o cluster do pai a este cluster, ja que vai trocar de diretorio
@@ -210,7 +209,7 @@ void findPath(char* pathname, int temp_cluster_father_dir, struct t2fs_record* t
 	/*entries tem o conteudo do diretorio procurado. temp_current_dir tem a entrada de diretorio dele,
 	temp_current_dir_path tem o caminho dele, temp_cluster_father_dir tem o cluster do diretorio pai*/
 
-
+	return 0;
 }
 
 
@@ -236,7 +235,7 @@ int mkdir2 (char *pathname)
 {
 	printf("entrou na mkdir\n");
 
-	if(system == 0){
+	if(system_initialized == 0){
 		init_system();
 	}
 
@@ -275,7 +274,7 @@ int mkdir2 (char *pathname)
 		for(i=0; i<DIRENT_PER_SECTOR;i++){
 			if(strcmp(word, entries[i].name) == 0){
 				if(entries[i].TypeVal != 2){
-					if(debug = 1){
+					if(debug == 1){
 						printf("nao eh um diretorio\n");
 					}
 					return -1;
@@ -294,7 +293,7 @@ int mkdir2 (char *pathname)
 					//entao acabou a palavra, eh o diretorio que tu precisa criar
 					for(i=0; i<DIRENT_PER_SECTOR;i++){
 						//percorre o array de entries pra achar uma entrada livre
-						if(entries[i].TypeVal = 0x00){
+						if(entries[i].TypeVal == 0x00){
 						//se o tipo de valor e 0, o arquivo nao esta sendo usado
 						//escreve o cluster atualizado do diretorio pai com a nova entrada de diretorio
 							entries[i].TypeVal = 0x02;
@@ -353,7 +352,7 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 -----------------------------------------------------------------------------*/
 int rmdir2 (char *pathname)
 {
-	if(system == 0){
+	if(system_initialized == 0){
 		init_system();
 	}
 
@@ -374,7 +373,10 @@ int rmdir2 (char *pathname)
 		return -1;
 	}
 
-	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
+
+	if(findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries)==-1){
+		return -1;
+	}
 
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
 	for(i=0; i<DIRENT_PER_SECTOR;i++){
@@ -415,7 +417,7 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int chdir2 (char *pathname){
-	if(system == 0){
+	if(system_initialized == 0){
 		init_system();
 	}
 	char* cluster_buffer = (char *)malloc(256*sb->SectorsPerCluster);
@@ -427,7 +429,9 @@ int chdir2 (char *pathname){
 	int i = 0;
 	int found = 0;
 
-	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
+	if(findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries)==-1){
+		return -1;
+	}
 
 
 	//ACHOU TODO CAMINHO ATE O DIRETORIO
@@ -458,18 +462,18 @@ Saida:
 	incluindo espaco insuficiente, conforme informado por "size".
 -----------------------------------------------------------------------------*/
 int getcwd2 (char *pathname, int size){
-	if(system == 0){
+	if(system_initialized == 0){
 		init_system();
 	}
 	if(current_directory == NULL){
-		if(debug = 1){
+		if(debug == 1){
 			printf("nao esta em diretorio nenhum\n");
 		}
 		return -1;
 	}
 
 	if(strlen(current_directory_path) > size){
-		if(debug = 1){
+		if(debug == 1){
 			printf("tamanho insuficiente\n");
 		}
 		return -1;
@@ -499,7 +503,7 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna o identificador
 DIR2 opendir2 (char *pathname)
 {
 
-	if(system == 0){
+	if(system_initialized == 0){
 		printf("vai inicializar o sist\n");
 		init_system();
 	}
@@ -512,18 +516,21 @@ DIR2 opendir2 (char *pathname)
 	int found = 0;
 
 	printf("tudo alocado\n");
-	findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries);
+	if(findPath(pathname, temp_cluster_father_dir, temp_current_dir, entries)==-1){
+		return -1;
+	}
 	printf("achou diretorio %s, %d", pathname, temp_cluster_father_dir);
 
 	/*achou o diretorio, instancia uma nova file_struct, coloca na
 	primeira posicao livre do array de open directories e retorna o indice*/
 	struct file_struct open_dir;
 	current_directory = temp_current_dir;
-	strncpy(open_dir.name,current_directory->name, 56);
-	open_dir.firstCluster, current_directory->firstCluster;
+	strncpy(open_dir.name,current_directory->name, 55);
+	open_dir.firstCluster = current_directory->firstCluster; // XXX check this
 	open_dir.offset = 0;
 
 	i=0;
+  // XXX isso n faz sentido
 	while(open_directories[i].name!=NULL){
 		i++;
 	}
@@ -553,7 +560,7 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 -----------------------------------------------------------------------------*/
 int readdir2 (DIR2 handle, DIRENT2 *dentry)
 {
-	if(system == 0){
+	if(system_initialized == 0){
 		init_system();
 	}
 
@@ -586,7 +593,7 @@ Saida:	Se a operacao foi realizada com sucesso, a funcao retorna "0" (zero).
 	Em caso de erro, sera retornado um valor diferente de zero.
 -----------------------------------------------------------------------------*/
 int closedir2 (DIR2 handle){
-	if(system == 0){
+	if(system_initialized == 0){
 		init_system();
 	}
 	if(open_directories[handle].name !=  NULL){
